@@ -7,7 +7,8 @@ SELECT sum(gross_revenue) AS gross_revenue, sum(discount_value) AS discount_valu
        count(DISTINCT order_id) AS orders, count(DISTINCT customer_key) AS customers,
        sum(net_revenue)/nullif(count(DISTINCT order_id),0) AS average_ticket,
        sum(discount_value)/nullif(sum(gross_revenue),0) AS discount_percentage,
-       sum(returned_quantity)::numeric/nullif(sum(quantity),0) AS return_rate
+       sum(returned_quantity)::numeric/nullif(sum(quantity),0) AS return_rate,
+       sum(variable_cost_value) AS variable_cost_value
 FROM analytics.fact_sales;
 
 CREATE OR REPLACE VIEW analytics.vw_product_profitability AS
@@ -19,9 +20,14 @@ SELECT p.product_key, p.product_name, p.category,
        sum(f.total_product_cost) AS total_product_cost, sum(f.freight_allocated) AS freight_allocated,
        sum(f.return_value) AS return_value,
        sum(f.returned_quantity)::numeric/nullif(sum(f.quantity),0) AS return_rate,
-       1 - (sum(f.total_product_cost) + sum(f.freight_allocated)) /
-          nullif(sum((f.quantity-f.returned_quantity)*f.unit_price)*0.85,0)
-          AS maximum_discount_for_15pct_margin
+       analytics.discount_limit(
+          sum((f.quantity-f.returned_quantity)*f.unit_price),
+          sum((f.quantity-f.returned_quantity)*f.unit_price*f.variable_cost_rate)
+            /nullif(sum((f.quantity-f.returned_quantity)*f.unit_price),0),
+          sum(f.total_product_cost) + sum(f.freight_allocated) + sum(f.variable_cost_fixed), 0.15)
+          AS maximum_discount_for_15pct_margin,
+       sum(f.variable_cost_value) AS variable_cost_value,
+       sum(f.variable_cost_fixed) AS variable_cost_fixed
 FROM analytics.fact_sales f JOIN analytics.dim_product p USING(product_key)
 GROUP BY p.product_key;
 
@@ -60,7 +66,8 @@ SELECT c.channel_key, c.channel_name, sum(f.net_revenue) AS net_revenue,
        sum(f.total_product_cost) AS total_product_cost,
        sum(f.net_revenue)/nullif(count(DISTINCT f.order_id),0) AS average_ticket,
        count(DISTINCT f.order_id) AS orders,
-       sum(f.returned_quantity)::numeric/nullif(sum(f.quantity),0) AS return_rate
+       sum(f.returned_quantity)::numeric/nullif(sum(f.quantity),0) AS return_rate,
+       sum(f.variable_cost_value) AS variable_cost_value
 FROM analytics.fact_sales f JOIN analytics.dim_channel c USING(channel_key)
 GROUP BY c.channel_key;
 
@@ -69,7 +76,8 @@ SELECT date_trunc('month', d.full_date)::date AS month,
        sum(f.net_revenue) AS net_revenue, sum(f.contribution_margin) AS contribution_margin,
        sum(f.contribution_margin)/nullif(sum(f.net_revenue),0) AS margin_percentage,
        sum(f.discount_value)/nullif(sum(f.gross_revenue),0) AS discount_percentage,
-       count(DISTINCT f.order_id) AS orders
+       count(DISTINCT f.order_id) AS orders,
+       sum(f.variable_cost_value) AS variable_cost_value
 FROM analytics.fact_sales f JOIN analytics.dim_date d USING(date_key)
 GROUP BY 1;
 

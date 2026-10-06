@@ -10,6 +10,15 @@ from src.config.settings import ROOT, Settings  # noqa: E402
 from src.database.connection import engine_for  # noqa: E402
 
 DESCRIPTIONS = {
+    "variable_cost_rate": "Soma das taxas sintéticas sobre receita líquida, [0,1)",
+    "variable_cost_fixed": "Embalagem por item, não estornada nas devoluções",
+    "variable_cost_value": "HALF_UP(líquida × taxa + embalagem), centavos",
+    "payment_fee_rate": "Taxa sintética de pagamento, fração",
+    "channel_fee_rate": "Taxa sintética do canal, fração",
+    "commission_rate": "Comissão sintética, fração",
+    "packaging_cost": "Embalagem por item, centavos",
+    "version": "Versão da migração SQL aplicada",
+    "applied_at": "Timestamp de aplicação da migração",
     "customer_id": "ID natural do cliente sintético",
     "customer_key": "PK/FK estável do cliente",
     "customer_name": "Nome fictício; não representa pessoa/empresa real",

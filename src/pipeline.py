@@ -9,6 +9,7 @@ from pathlib import Path
 from sqlalchemy import text
 
 from src.analytics.insights import generate_insights, read_analytics
+from src.analytics.web_export import export_web_snapshot
 from src.config.settings import Settings
 from src.database.connection import engine_for
 from src.database.loader import initialize, load_snapshot, read_fact
@@ -70,10 +71,16 @@ def run(settings, validate_only=False):
             connection.execute(
                 text("UPDATE analytics.pipeline_metadata SET completed_at = current_timestamp")
             )
+            completed_at = connection.execute(
+                text("SELECT completed_at FROM analytics.pipeline_metadata")
+            ).scalar_one()
         # Publish successful exports only after PostgreSQL has committed.
         save_json(settings.processed_path / "insights.json", insights)
         for name, frame in {**dimensions, "fact_sales": persisted, **tables}.items():
             frame.to_csv(settings.processed_path / f"{name}.csv", index=False)
+        # Test runs stay isolated; explicitly call the exporter in tests using a temporary path.
+        if not settings.database.endswith("_test"):
+            export_web_snapshot(tables, completed_at)
         LOG.info("Reconciliation passed for all metrics, rows and order freight")
         LOG.info(
             "%s deterministic rules evaluated; %s alerts",

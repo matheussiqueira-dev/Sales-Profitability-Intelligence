@@ -1,4 +1,5 @@
 from decimal import Decimal
+from pathlib import Path
 
 from sqlalchemy import text
 
@@ -9,6 +10,7 @@ def source_totals(data):
     """Independent source aggregation; does not call transformation helpers."""
     orders = data["orders"].set_index("order_id")
     products = data["products"].set_index("product_id")
+    variable_costs = data["variable_costs"].set_index("order_item_id")
     returns = data["returns"].groupby("order_item_id").quantity_returned.sum().to_dict()
     totals = dict.fromkeys(
         [
@@ -18,6 +20,7 @@ def source_totals(data):
             "net_revenue",
             "total_product_cost",
             "freight_allocated",
+            "variable_cost_value",
             "contribution_margin",
         ],
         ZERO,
@@ -35,19 +38,28 @@ def source_totals(data):
         cost = ((item.quantity - returned) * products.loc[item.product_id, "unit_cost"]).quantize(
             CENT, rounding="ROUND_HALF_UP"
         )
+        cost_row = variable_costs.loc[item.order_item_id]
+        rate = cost_row.payment_fee_rate + cost_row.channel_fee_rate + cost_row.commission_rate
+        variable = ((gross - discount - refund) * rate + cost_row.packaging_cost).quantize(
+            CENT, rounding="ROUND_HALF_UP"
+        )
         for col, value in (
             ("gross_revenue", gross),
             ("discount_value", discount),
             ("return_value", refund),
             ("net_revenue", gross - discount - refund),
             ("total_product_cost", cost),
+            ("variable_cost_value", variable),
         ):
             totals[col] += value
     totals["freight_allocated"] = sum(
         (r.freight_actual for r in data["freight"].itertuples() if r.order_id in active), ZERO
     )
     totals["contribution_margin"] = (
-        totals["net_revenue"] - totals["total_product_cost"] - totals["freight_allocated"]
+        totals["net_revenue"]
+        - totals["total_product_cost"]
+        - totals["freight_allocated"]
+        - totals["variable_cost_value"]
     )
     return totals
 
@@ -85,8 +97,7 @@ def reconcile(data, warehouse, tolerance=Decimal("0.00")):
 
 
 def reconcile_sql(connection, report):
-    from src.database.loader import SQL_PATH
-
+    SQL_PATH = Path(__file__).resolve().parents[2] / "sql"
     query = (SQL_PATH / "06_validation_queries.sql").read_text(encoding="utf-8")
     source = connection.execute(text(query)).mappings().one()
     report["sql_source_passed"] = all(

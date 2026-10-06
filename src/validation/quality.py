@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 
 import pandas as pd
 
+from src.validation.pandera_contracts import validate_with_pandera
 from src.validation.schemas import CHANNELS, CONTRACTS, STATUSES
 
 
@@ -71,12 +72,17 @@ def validate_sources(sources):
     if not report["passed"]:
         raise QualityError(report)
 
+    report["pandera"] = {"lazy": True, "decimal_coercion": False}
+    for failure in validate_with_pandera(cleaned):
+        issue(failure)
+
     relationships = [
         ("orders", "customer_id", "customers", "customer_id"),
         ("order_items", "order_id", "orders", "order_id"),
         ("order_items", "product_id", "products", "product_id"),
         ("freight", "order_id", "orders", "order_id"),
         ("returns", "order_item_id", "order_items", "order_item_id"),
+        ("variable_costs", "order_item_id", "order_items", "order_item_id"),
     ]
     for child, fk, parent, pk in relationships:
         if not cleaned[child][fk].isin(cleaned[parent][pk]).all():
@@ -93,6 +99,8 @@ def validate_sources(sources):
     if set(cleaned["freight"].order_id) != set(orders.order_id):
         issue("freight: must contain exactly one row per order")
     items = cleaned["order_items"]
+    if set(cleaned["variable_costs"].order_item_id) != set(items.order_item_id):
+        issue("variable_costs: exactly one cost contract is required per item")
     if set(items.order_id) != set(orders.order_id):
         issue("orders: every order must have items")
     customer_dates = cleaned["customers"].set_index("customer_id").registration_date

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
-from sqlalchemy import Column, Date, Integer, MetaData, Numeric, String, Table, inspect, text
+from sqlalchemy import MetaData, Table, inspect, text
 
 from src.validation.schemas import CONTRACTS
 
@@ -36,51 +36,30 @@ def initialize(connection):
         metadata = connection.execute(
             text("SELECT owner, contract_version FROM analytics.pipeline_metadata WHERE singleton")
         ).one_or_none()
-        if metadata != (OWNER, 1):
+        if metadata is None or metadata[0] != OWNER or metadata[1] not in (1, 2):
             raise ValueError("Unknown warehouse ownership/version")
         allowed = {
             "raw": set(CONTRACTS),
             "staging": set(CONTRACTS),
-            "analytics": {*DIMENSIONS, "fact_sales", "pipeline_metadata"},
+            "analytics": {*DIMENSIONS, "fact_sales", "pipeline_metadata", "schema_migrations"},
         }
         if any(set(tables) - allowed[schema] for schema, tables in existing.items()):
             raise ValueError("Unexpected tables in warehouse schemas; refusing to modify")
+        if metadata[1] == 1:
+            execute_file(connection, "migrations/002_variable_costs.sql")
     execute_file(connection, "01_create_schemas.sql")
-    metadata = MetaData()
-    for schema in ("raw", "staging"):
-        for name, contract in CONTRACTS.items():
-
-            def column_type(kind):
-                return {
-                    "int": Integer(),
-                    "date": Date(),
-                    "text": String(),
-                    "money": Numeric(18, 2),
-                    "rate": Numeric(8, 4),
-                }[kind]
-
-            Table(
-                name,
-                metadata,
-                *[
-                    Column(
-                        col,
-                        String() if schema == "raw" else column_type(kind),
-                        primary_key=col in contract.key,
-                        nullable=False,
-                    )
-                    for col, kind in contract.columns.items()
-                ],
-                schema=schema,
-            )
-    metadata.create_all(connection)
+    execute_file(connection, "00_create_source_tables.sql")
     for name in (
         "02_create_dimensions.sql",
         "03_create_fact_sales.sql",
         "04_create_indexes.sql",
+        "08_discount_limit.sql",
         "05_create_views.sql",
     ):
         execute_file(connection, name)
+    connection.execute(
+        text("INSERT INTO analytics.schema_migrations(version) VALUES (2) ON CONFLICT DO NOTHING")
+    )
 
 
 def load_snapshot(connection, original, cleaned, dimensions, fact):

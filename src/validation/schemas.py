@@ -82,6 +82,16 @@ CONTRACTS = {
             "margin_target_percentage": "rate",
         },
     ),
+    "variable_costs": Contract(
+        ("order_item_id",),
+        {
+            "order_item_id": "int",
+            "payment_fee_rate": "rate",
+            "channel_fee_rate": "rate",
+            "commission_rate": "rate",
+            "packaging_cost": "money",
+        },
+    ),
 }
 CHANNELS = ["Loja Física", "E-commerce", "Marketplace", "Venda Direta"]
 STATUSES = ["completed", "returned", "partially_returned", "cancelled"]

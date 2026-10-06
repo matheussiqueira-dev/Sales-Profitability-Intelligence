@@ -11,15 +11,19 @@ CREATE TABLE IF NOT EXISTS analytics.fact_sales (
     unit_price numeric(18,2) NOT NULL CHECK(unit_price >= 0),
     gross_revenue numeric(18,2) NOT NULL CHECK(gross_revenue >= 0),
     discount_percentage numeric(8,4) NOT NULL CHECK(discount_percentage BETWEEN 0 AND 1),
-    discount_value numeric(18,2) NOT NULL,
+    discount_value numeric(18,2) NOT NULL CHECK(discount_value >= 0),
     net_revenue numeric(18,2) NOT NULL CHECK(net_revenue >= 0),
     unit_cost numeric(18,2) NOT NULL CHECK(unit_cost >= 0),
     total_product_cost numeric(18,2) NOT NULL CHECK(total_product_cost >= 0),
     freight_allocated numeric(18,2) NOT NULL CHECK(freight_allocated >= 0),
     returned_quantity integer NOT NULL CHECK(returned_quantity BETWEEN 0 AND quantity),
     return_value numeric(18,2) NOT NULL CHECK(return_value >= 0),
+    variable_cost_rate numeric(8,4) NOT NULL CHECK(variable_cost_rate >= 0 AND variable_cost_rate < 1),
+    variable_cost_fixed numeric(18,2) NOT NULL CHECK(variable_cost_fixed >= 0),
+    variable_cost_value numeric(18,2) NOT NULL CHECK(variable_cost_value >= 0),
     contribution_margin numeric(18,2) NOT NULL,
     contribution_margin_percentage numeric(20,10),
     CHECK(net_revenue = gross_revenue - discount_value - return_value),
-    CHECK(contribution_margin = net_revenue - total_product_cost - freight_allocated)
+    CHECK(variable_cost_value = round(net_revenue * variable_cost_rate + variable_cost_fixed,2)),
+    CHECK(contribution_margin = net_revenue - total_product_cost - freight_allocated - variable_cost_value)
 );

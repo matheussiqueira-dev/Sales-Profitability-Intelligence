@@ -100,6 +100,8 @@ def test_simulator_and_compensating_volume():
                 "total_product_cost": Decimal(120),
                 "freight_allocated": Decimal(10),
                 "contribution_margin": Decimal(50),
+                "variable_cost_rate": Decimal(0),
+                "variable_cost_fixed": Decimal(0),
             }
         ]
     )

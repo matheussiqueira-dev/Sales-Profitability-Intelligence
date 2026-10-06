@@ -16,7 +16,14 @@ def money(value):
 
 
 def financial_metrics(
-    quantity, unit_price, discount_percentage, unit_cost, returned_quantity=0, freight_allocated=0
+    quantity,
+    unit_price,
+    discount_percentage,
+    unit_cost,
+    returned_quantity=0,
+    freight_allocated=0,
+    variable_cost_rate=0,
+    variable_cost_fixed=0,
 ):
     qty, returned = decimal(quantity), decimal(returned_quantity)
     price, cost, discount, freight = map(
@@ -34,7 +41,11 @@ def financial_metrics(
     refund = money((gross - discounts) * returned / qty)
     net = gross - discounts - refund
     cmv = money((qty - returned) * cost)
-    margin = net - cmv - money(freight)
+    rate, fixed = decimal(variable_cost_rate), decimal(variable_cost_fixed)
+    if not ZERO <= rate < 1 or fixed < 0:
+        raise ValueError("Invalid variable cost inputs")
+    variable = money(net * rate + fixed)
+    margin = net - cmv - money(freight) - variable
     return {
         "gross_revenue": gross,
         "discount_value": discounts,
@@ -42,6 +53,9 @@ def financial_metrics(
         "net_revenue": net,
         "total_product_cost": cmv,
         "freight_allocated": money(freight),
+        "variable_cost_rate": rate,
+        "variable_cost_fixed": money(fixed),
+        "variable_cost_value": variable,
         "contribution_margin": margin,
         "contribution_margin_percentage": margin / net if net else None,
     }
@@ -66,38 +80,83 @@ def allocate_freight(total, revenues, quantities):
     return rounded
 
 
-def maximum_discount(price, cost, variable_cost=0, minimum_margin=Decimal(".15")):
+def maximum_discount(
+    price, cost, variable_cost=0, minimum_margin=Decimal(".15"), *, variable_cost_rate=0
+):
     price, cost, variable_cost, minimum_margin = map(
         decimal, (price, cost, variable_cost, minimum_margin)
     )
     if price <= 0 or min(cost, variable_cost) < 0 or not ZERO <= minimum_margin < 1:
         raise ValueError("Invalid sustainable discount inputs")
     # Negative means even full list price cannot reach the required margin.
-    return 1 - (cost + variable_cost) / (price * (1 - minimum_margin))
+    rate = decimal(variable_cost_rate)
+    if not ZERO <= rate < 1:
+        raise ValueError("Invalid variable cost rate")
+    if 1 - rate - minimum_margin <= 0:
+        return None
+    return 1 - (cost + variable_cost) / (price * (1 - rate - minimum_margin))
 
 
 def simulate_discount(fact, discount):
     discount = decimal(discount)
     if not ZERO <= discount <= Decimal(".30"):
         raise ValueError("Simulator discount must be between 0 and 30%")
-    net = sum(
+    revenues = [
+        money(
+            (decimal(r.quantity) - decimal(r.returned_quantity))
+            * decimal(r.unit_price)
+            * (1 - discount)
+        )
+        for r in fact.itertuples()
+    ]
+    net = sum(revenues, ZERO)
+    variable = sum(
         (
-            money(
-                (decimal(r.quantity) - decimal(r.returned_quantity))
-                * decimal(r.unit_price)
-                * (1 - discount)
-            )
-            for r in fact.itertuples()
+            money(revenue * decimal(row.variable_cost_rate) + decimal(row.variable_cost_fixed))
+            for revenue, row in zip(revenues, fact.itertuples(), strict=True)
         ),
         ZERO,
     )
     costs = sum(fact.total_product_cost, ZERO) + sum(fact.freight_allocated, ZERO)
-    margin = net - costs
+    margin = net - costs - variable
     current = sum(fact.contribution_margin, ZERO)
     return {
         "net_revenue": net,
+        "variable_cost_value": variable,
         "margin": margin,
         "margin_percentage": margin / net if net else None,
         "margin_impact": margin - current,
         "required_volume_growth": current / margin - 1 if margin > 0 and current > 0 else None,
     }
+
+
+def aggregate_discount_limit(fact, minimum_margin=Decimal(".15")):
+    base = sum(
+        (
+            (decimal(r.quantity) - decimal(r.returned_quantity)) * decimal(r.unit_price)
+            for r in fact.itertuples()
+        ),
+        ZERO,
+    )
+    if base <= 0:
+        return None
+    weighted_rate = (
+        sum(
+            (
+                (decimal(r.quantity) - decimal(r.returned_quantity))
+                * decimal(r.unit_price)
+                * decimal(r.variable_cost_rate)
+                for r in fact.itertuples()
+            ),
+            ZERO,
+        )
+        / base
+    )
+    fixed = sum(fact.freight_allocated, ZERO) + sum(fact.variable_cost_fixed, ZERO)
+    return maximum_discount(
+        base,
+        sum(fact.total_product_cost, ZERO),
+        fixed,
+        minimum_margin,
+        variable_cost_rate=weighted_rate,
+    )

@@ -11,12 +11,19 @@ def build_fact(data):
     frame = frame.merge(
         data["products"][["product_id", "unit_cost"]], on="product_id", validate="many_to_one"
     )
+    frame = frame.merge(data["variable_costs"], on="order_item_id", validate="one_to_one")
     freight = data["freight"].set_index("order_id").freight_actual.to_dict()
     rows = []
     for row in frame.sort_values(["order_id", "order_item_id"]).itertuples():
         returned = returns.get(row.order_item_id, 0)
         values = financial_metrics(
-            row.quantity, row.unit_price, row.discount_percentage, row.unit_cost, returned
+            row.quantity,
+            row.unit_price,
+            row.discount_percentage,
+            row.unit_cost,
+            returned,
+            variable_cost_rate=row.payment_fee_rate + row.channel_fee_rate + row.commission_rate,
+            variable_cost_fixed=row.packaging_cost,
         )
         rows.append(
             {
@@ -43,7 +50,12 @@ def build_fact(data):
         allocation = allocate_freight(freight[oid], group.net_revenue, group.quantity)
         for idx, amount in zip(group.index, allocation, strict=True):
             net = fact.at[idx, "net_revenue"]
-            margin = net - fact.at[idx, "total_product_cost"] - amount
+            margin = (
+                net
+                - fact.at[idx, "total_product_cost"]
+                - amount
+                - fact.at[idx, "variable_cost_value"]
+            )
             fact.at[idx, "freight_allocated"] = amount
             fact.at[idx, "contribution_margin"] = margin
             fact.at[idx, "contribution_margin_percentage"] = margin / net if net else None

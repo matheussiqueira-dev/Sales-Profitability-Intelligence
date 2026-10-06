@@ -159,6 +159,26 @@ def generate(seed=42, orders_count=40000, customers_count=2000, products_count=2
                         "margin_target_percentage": "0.20",
                     }
                 )
+    # Separate RNG preserves every V1 transaction for exact before/after comparisons.
+    cost_rng = random.Random(seed + 104729)
+    order_channels = {order["order_id"]: order["channel"] for order in data["orders"]}
+    rates = {
+        "Loja Física": (".0100", ".0000", ".0200"),
+        "E-commerce": (".0320", ".0000", ".0050"),
+        "Marketplace": (".0350", ".1450", ".0050"),
+        "Venda Direta": (".0150", ".0000", ".0200"),
+    }
+    for item in data["order_items"]:
+        payment, channel, commission = rates[order_channels[item["order_id"]]]
+        data["variable_costs"].append(
+            {
+                "order_item_id": item["order_item_id"],
+                "payment_fee_rate": payment,
+                "channel_fee_rate": channel,
+                "commission_rate": commission,
+                "packaging_cost": f"{cost_rng.uniform(0.8, 5):.2f}",
+            }
+        )
     return data
 
 
