@@ -37,7 +37,7 @@ jobs:
           POSTGRES_PASSWORD: ephemeral_ci_only
         ports: ['5432:5432']
         options: >-
-          --health-cmd 'pg_isready -U sales_app -d sales_profitability_test'
+          --health-cmd "pg_isready -U sales_app -d sales_profitability_test"
           --health-interval 5s --health-timeout 5s --health-retries 15
     steps:
       - uses: actions/checkout@v4
