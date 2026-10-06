@@ -1,0 +1,22 @@
+import {expect,test} from "@playwright/test";
+import {mkdirSync} from "node:fs";
+test("dados conciliados, filtros e navegação sem overflow",async({page},testInfo)=>{
+ const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));
+ await page.goto("/");
+ await expect(page.getByRole("heading",{name:"Vender mais. Contribuir quanto?"})).toBeVisible();
+ await expect(page.getByText("Conciliação em centavos aprovada")).toBeVisible();
+ await expect(page.getByText("22,8%",{exact:true})).toBeVisible();
+ await page.getByLabel("Categoria",{exact:true}).selectOption("Acessórios");
+ await page.getByText(/Consultar os .* produtos em tabela/).click();
+ await expect(page.getByRole("region",{name:"Rentabilidade dos produtos"})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+ expect(errors).toEqual([]);
+ await page.getByLabel("Categoria",{exact:true}).selectOption("Todas");
+ await page.getByText(/Consultar os .* produtos em tabela/).click();
+ await page.evaluate(()=>window.scrollTo(0,0));
+ mkdirSync("../artifacts/web",{recursive:true});
+ await page.screenshot({path:`../artifacts/web/${testInfo.project.name}.png`,fullPage:true});
+ await page.getByRole("link",{name:"Metodologia",exact:true}).click();
+ await expect(page.getByRole("heading",{name:"Como a rentabilidade é calculada"})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+});

@@ -13,3 +13,10 @@ data/raw/*.csv
 data/processed/*
 !data/processed/README.md
 artifacts/
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+**/.pbi/
+test-results/
+playwright-report/
