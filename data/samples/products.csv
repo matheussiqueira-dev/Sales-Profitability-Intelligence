@@ -1,0 +1,21 @@
+product_id,product_name,category,subcategory,unit_cost,list_price,supplier
+1,Eletrônicos Produto 001,Eletrônicos,Linha 2,86.62,157.49,Fornecedor Sintético 02
+2,Acessórios Produto 002,Acessórios,Linha 3,45.96,131.32,Fornecedor Sintético 03
+3,Casa Produto 003,Casa,Linha 4,217.35,395.18,Fornecedor Sintético 04
+4,Escritório Produto 004,Escritório,Linha 1,183.58,333.79,Fornecedor Sintético 05
+5,Esportes Produto 005,Esportes,Linha 2,79.18,143.96,Fornecedor Sintético 06
+6,Ferramentas Produto 006,Ferramentas,Linha 3,197.85,359.72,Fornecedor Sintético 07
+7,Eletrônicos Produto 007,Eletrônicos,Linha 4,1343.95,2443.54,Fornecedor Sintético 08
+8,Acessórios Produto 008,Acessórios,Linha 1,6.58,18.80,Fornecedor Sintético 09
+9,Casa Produto 009,Casa,Linha 2,267.52,486.40,Fornecedor Sintético 10
+10,Escritório Produto 010,Escritório,Linha 3,359.90,423.41,Fornecedor Sintético 11
+11,Esportes Produto 011,Esportes,Linha 4,117.73,214.05,Fornecedor Sintético 12
+12,Ferramentas Produto 012,Ferramentas,Linha 1,58.28,105.96,Fornecedor Sintético 01
+13,Eletrônicos Produto 013,Eletrônicos,Linha 2,1581.28,2875.06,Fornecedor Sintético 02
+14,Acessórios Produto 014,Acessórios,Linha 3,74.17,211.91,Fornecedor Sintético 03
+15,Casa Produto 015,Casa,Linha 4,38.09,69.26,Fornecedor Sintético 04
+16,Escritório Produto 016,Escritório,Linha 1,39.37,71.58,Fornecedor Sintético 05
+17,Esportes Produto 017,Esportes,Linha 2,280.93,510.78,Fornecedor Sintético 06
+18,Ferramentas Produto 018,Ferramentas,Linha 3,202.50,368.18,Fornecedor Sintético 07
+19,Eletrônicos Produto 019,Eletrônicos,Linha 4,1340.25,2436.81,Fornecedor Sintético 08
+20,Acessórios Produto 020,Acessórios,Linha 1,375.61,441.89,Fornecedor Sintético 09

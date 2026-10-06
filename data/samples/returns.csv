@@ -1,0 +1,8 @@
+return_id,order_item_id,return_date,quantity_returned,return_reason
+1,7,2024-03-01,1,wrong_item
+2,90,2025-01-23,3,customer_request
+3,104,2025-03-18,2,wrong_item
+4,109,2025-04-15,3,late_delivery
+5,129,2025-06-14,2,wrong_item
+6,146,2025-07-23,2,wrong_item
+7,147,2025-08-15,4,customer_request
