@@ -1,0 +1,77 @@
+Aqui está uma versão reescrita, estruturada e otimizada do seu prompt. Ela foi desenhada para instruir com precisão uma IA (como ChatGPT, Claude ou Codex) a atuar como um **Engenheiro de Analytics / Arquiteto de Software Senior** e construir a solução completa passo a passo, seguindo a arquitetura e as regras de negócio definidas no seu projeto:
+
+---
+
+### **Prompt ReesVisualizado e Estruturado**
+
+> **Atue como um Engenheiro de Analytics e Arquiteto de Dados Senior.**
+> Preciso criar o plano de ação, a arquitetura e a implementação completa de uma plataforma de **Inteligência de Vendas e Rentabilidade (Sales & Profitability Intelligence)** para o repositório público:
+> `[https://github.com/matheussiqueira-dev/Sales-Profitability-Intelligence.git](https://github.com/matheussiqueira-dev/Sales-Profitability-Intelligence.git)`
+> O objetivo principal é superar o escopo de um simples dashboard visual e construir um **sistema analítico fim a fim (Analytics Engineering)** que integre dados de vendas, pedidos, clientes, produtos, custos, descontos, fretes e devoluções para determinar a margem de contribuição real e a rentabilidade líquida.
+> ---
+> 
+> 
+> ### **1. Visão Geral da Arquitetura**
+> 
+> 
+> A solução deve seguir o fluxo de dados em camadas:
+> 1. **Dados Brutos (Raw / Ingestão):** Gerador de dados fictícios em Python (24 meses de histórico, 50k-150k itens, ~2.000 clientes, ~200 produtos, canais, fretes, devoluções e descontos).
+> 2. **Pipeline ETL (Python / Pandas / Pandera):** Ingestão, validação de tipos e schema, limpeza, cálculo de regras de negócio e carga no PostgreSQL.
+> 3. **Data Warehouse (PostgreSQL & Docker):** Banco relacional em container Docker estruturado em camadas (`raw`, `staging`, `analytics`) com um modelo **Star Schema** (Tabelas Fato e Dimensão).
+> 4. **Camada de BI (Power BI & DAX):** Modelo dimensional conectado ao PostgreSQL com medidas DAX avançadas, simulador *What-if* de descontos, análise por quadrantes de margem e detecção/alertas de perda de rentabilidade.
+> 5. **Showcase Web (Next.js / Tailwind / Recharts):** Landing page interativa integrada para exibição executiva e navegação no portfólio.
+> 
+> 
+> ---
+> 
+> 
+> ### **2. Regras Financeiras e Métrica Principal**
+> 
+> 
+> Você deve obrigatoriamente implementar as seguintes derivações financeiras (não utilize colunas prontas de margem nos dados brutos):
+> * $\text{Receita Bruta} = \text{Quantidade} \times \text{Preço Unitário}$
+> * $\text{Desconto} = \text{Receita Bruta} \times \%\text{ Desconto}$
+> * $\text{Receita Líquida} = \text{Receita Bruta} - \text{Descontos} - \text{Devoluções}$
+> * $\text{CMV} = \text{Quantidade} \times \text{Custo Unitário}$
+> * $\text{Margem de Contribuição} = \text{Receita Líquida} - \text{CMV} - \text{Frete Real} - \text{Custos Variáveis}$
+> * $\text{Margem \%} = \frac{\text{Margem de Contribuição}}{\text{Receita Líquida}}$
+> 
+> 
+> ---
+> 
+> 
+> ### **3. Estrutura do Repositório**
+> 
+> 
+> Organize o código na seguinte estrutura modular:
+> ```text
+> sales-profitability-intelligence/
+> ├── data/ (raw, processed, samples)
+> ├── src/ (ingestion, transformation, validation, database, pipeline.py)
+> ├── sql/ (01_create_schema.sql, 02_create_dimensions.sql, 03_create_fact_sales.sql, 04_analytics_views.sql)
+> ├── powerbi/ (measures.dax, model_schema.md)
+> ├── web/ (Aplicação Next.js / Tailwind / Recharts)
+> ├── tests/ (pytest para transformação e qualidade)
+> ├── docker-compose.yml
+> └── README.md
+> 
+> ```
+> 
+> 
+> ---
+> 
+> 
+> ### **4. O que você deve entregar neste momento**
+> 
+> 
+> 1. **Plano de Ação Faseado (Milestones):** Etapas claras de desenvolvimento do MVP até a entrega final com landing page e Docker.
+> 2. **Código Inicial:**
+> * O arquivo `docker-compose.yml` para subir o PostgreSQL + pgAdmin.
+> * O script em Python `scripts/generate_mock_data.py` para gerar a base de dados realista.
+> * Os scripts SQL DDL para criação das tabelas e camadas (`raw`, `staging`, `analytics`).
+> * O pipeline Python base em `src/pipeline.py` responsável pelo processamento dos dados.
+> 
+> 
+> 3. **Documentação DAX:** Lista com o código de todas as medidas DAX principais (Receita Líquida, Margem de Contribuição, Margem %, Simulador What-if de Desconto e Ponto de Equilíbrio/Break-even).
+> 
+>

@@ -13,7 +13,7 @@ expression DatabaseName = "sales_profitability" meta [IsParameterQuery=true,Type
 
 	annotation PBI_ResultType = Text
 
-expression SourceMode = "Snapshot" meta [IsParameterQuery=true,Type="Text",IsParameterQueryRequired=true]
+expression SourceMode = "PostgreSQL" meta [IsParameterQuery=true,Type="Text",IsParameterQueryRequired=true]
 	lineageTag: dfb24a58-80cf-4d19-b789-fac5006f1220
 
 	annotation PBI_ResultType = Text

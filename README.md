@@ -200,6 +200,7 @@ de produtos devolvidos. Custo estático, sem SCD2; devolução imputada à data 
 full refresh local. Segmentar clientes usa o snapshot completo. Produção exige
 roles de menor privilégio, TLS, backups, retenção e migrações versionadas.
 
+Plano vigente de evolução: [plano de entrega sênior](docs/senior-delivery-plan.md).
 Próximos passos: montar/validar PBIX → screenshots reais → revisão comercial das
 premissas → política histórica de custos e devoluções → incremental/orquestração.
 Na evolução V2 autorizada em 06/10/2026, a aplicação web foi implementada;

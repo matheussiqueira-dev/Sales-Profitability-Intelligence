@@ -1,0 +1,1029 @@
+# Sales & Profitability Intelligence — Arquitetura, Auditoria Técnica e Plano de Implementação
+
+## Diagnóstico executivo
+
+A pesquisa altera um ponto importante do briefing inicial: o repositório **não está mais vazio**. Na inspeção atual, ele já contém uma implementação substancial de Analytics Engineering: gerador sintético, pipeline Python, validação, PostgreSQL em três camadas, Star Schema, testes, reconciliação financeira, Docker Compose, GitHub Actions, documentação Power BI, DAX, simulador e regras de insights. O briefing original previa exatamente a evolução `Raw → Python/Pandas/Pandera → PostgreSQL → Power BI → Next.js`, e a pesquisa preliminar já recomendava tratar o case como plataforma analítica em vez de um dashboard isolado. fileciteturn0file1 fileciteturn0file0
+
+Há, porém, quatro divergências materiais entre o escopo pedido e o estado atual:
+
+| Requisito | Estado atual | Avaliação |
+|---|---|---|
+| 24 meses, ~2.000 clientes, ~200 produtos, 50k–150k itens | Implementado: 40 mil pedidos e 101.772 itens sintéticos | Atende |
+| PostgreSQL `raw/staging/analytics` | Implementado | Atende |
+| Star Schema | Implementado | Atende |
+| Pipeline Pandas | Implementado | Atende |
+| **Pandera** | **Não está implementado**; a validação é customizada em Pandas/Python | Gap |
+| Receita, desconto, devolução, CMV, frete e margem derivados | Implementado | Atende parcialmente |
+| **Custos variáveis na margem** | **Ausentes da fato e do cálculo** | Gap crítico |
+| Docker PostgreSQL + pgAdmin | Implementado | Atende |
+| Power BI/DAX | Documentado, mas PBIX ainda não construído/validado | Parcial |
+| What-if e break-even | Implementados/documentados, mas sem custos variáveis | Parcial |
+| Next.js/Tailwind/Recharts | **Ainda não existe `web/`** | Gap |
+| CI | Implementado e uma execução remota foi concluída com sucesso | Atende |
+| Repositório público | **Na inspeção atual, o repositório está marcado como privado** | Divergência |
+
+O próprio README registra 2.000 clientes, 200 produtos, 40.000 pedidos, 101.772 itens, 24 meses entre janeiro de 2024 e dezembro de 2025 e 99.235 itens na fato após exclusão de cancelamentos. Também registra explicitamente que PBIX, screenshots e aplicação Next.js permanecem pendentes. fileciteturn4file0L2-L2
+
+O workflow remoto de GitHub Actions identificado no repositório terminou com `conclusion: success`; o mesmo retorno da API identifica o repositório como `private: true`. Portanto, em **6 de outubro de 2026**, a descrição “repositório público” do briefing não corresponde ao estado consultado. fileciteturn20file0L2-L2
+
+A conclusão técnica é direta: **não faz sentido reconstruir o projeto do zero**. O caminho correto é promover a implementação existente de um bom MVP para uma versão aderente ao contrato original, corrigindo custos variáveis e Pandera, construindo o Power BI real e concluindo a camada web.
+
+### O principal problema conceitual
+
+Também há uma distinção financeira que precisa permanecer explícita: a fórmula solicitada produz **Margem de Contribuição**, não “Lucro Líquido”. O repositório atual corretamente declara que impostos, comissões, CAC, custos fixos e determinadas perdas não estão incluídos e, por isso, a contribuição calculada não representa lucro líquido. fileciteturn22file0L2-L2
+
+Então, eu manteria o nome comercial **Sales & Profitability Intelligence**, mas usaria no produto:
+
+> **Rentabilidade por Margem de Contribuição**
+
+e nunca apresentaria o KPI atual como “Lucro Líquido”.
+
+Para chegar efetivamente a lucro líquido por cliente/produto/canal, seria necessário estabelecer critérios de alocação para despesas fixas, impostos, CAC e outros overheads. Isso pode ser uma futura camada `net_profitability`, mas não deve ser misturada silenciosamente com a margem de contribuição.
+
+## Arquitetura alvo
+
+A arquitetura que recomendo preserva o que já está funcionando e adiciona as duas capacidades ausentes: contrato declarativo de dados e custos variáveis.
+
+```text
+                         FONTES SINTÉTICAS
+                               │
+        ┌──────────────────────┼────────────────────────┐
+        │                      │                        │
+  customers/products    orders/order_items       freight/returns
+                                                   variable_costs
+        └──────────────────────┬────────────────────────┘
+                               │
+                               ▼
+                     Python Ingestion Layer
+                         pandas + logging
+                               │
+                               ▼
+                   Data Contract / Quality Gate
+                  Pandera + regras relacionais
+                  + reconciliação financeira
+                               │
+                               ▼
+                    PostgreSQL / Docker
+          ┌────────────────────┼────────────────────┐
+          │                    │                    │
+        raw                staging              analytics
+   fonte preservada       tipado/limpo         Star Schema
+          │                    │                    │
+          │                    │             ┌──────┴───────┐
+          │                    │             │              │
+          │                    │        fact_sales     dimensions
+          │                    │             │
+          └────────────────────┴─────────────┤
+                                             │
+                              ┌──────────────┼──────────────┐
+                              │              │              │
+                              ▼              ▼              ▼
+                          Power BI      Analytics       Web Export
+                         DAX/PBIP     insights/tests   aggregated JSON
+                              │                             │
+                              ▼                             ▼
+                    Decision Support                 Next.js Showcase
+                    What-if / Alerts              Tailwind / Recharts
+```
+
+A escolha de Star Schema está alinhada à orientação oficial da Microsoft para modelos semânticos Power BI: dimensões são usadas para filtragem/agrupamento e fatos para sumarização, reduzindo ambiguidade e melhorando a usabilidade do modelo. citeturn0search16turn0search47
+
+### Granularidade
+
+A granularidade correta continua sendo:
+
+> **uma linha de `analytics.fact_sales` = um item de pedido não cancelado.**
+
+O repositório atual já adota esse contrato, agrega múltiplas devoluções por item, recupera o CMV correspondente às quantidades devolvidas e aloca o frete real pelos itens do pedido. fileciteturn21file0L2-L2 fileciteturn22file0L2-L2
+
+Eu manteria:
+
+```text
+analytics.dim_date
+analytics.dim_customer
+analytics.dim_product
+analytics.dim_channel
+analytics.dim_seller
+analytics.fact_sales
+```
+
+e adicionaria à fato:
+
+```text
+variable_cost_rate
+variable_cost_fixed
+variable_cost_value
+```
+
+Não criaria uma `fact_costs` separada neste MVP, porque os custos variáveis propostos possuem naturalmente granularidade por item e entram diretamente no cálculo da contribuição. Uma fato separada só se justifica quando houver eventos de custo independentes da venda.
+
+### Um aprimoramento importante para devoluções
+
+O modelo atual atribui economicamente a devolução ao período da venda, mesmo que `return_date` aconteça posteriormente. Isso é adequado para uma análise de **rentabilidade da venda/coorte**, mas não responde corretamente a uma pergunta contábil do tipo “quanto de devoluções impactou setembro?”. Essa limitação já está declarada no contrato atual. fileciteturn22file0L2-L2
+
+Na evolução pós-MVP, eu adicionaria:
+
+```text
+analytics.fact_returns
+return_key
+order_item_id
+sale_date_key
+return_date_key
+product_key
+customer_key
+quantity_returned
+return_value
+return_reason
+```
+
+Assim seria possível analisar tanto:
+
+```text
+rentabilidade atribuída à venda
+```
+
+quanto:
+
+```text
+impacto financeiro no mês da devolução
+```
+
+sem alterar o grão de `fact_sales`.
+
+### Camada web sem acoplar a Vercel ao PostgreSQL local
+
+Para o showcase do portfólio, eu **não conectaria diretamente o frontend Next.js ao PostgreSQL do Docker local**.
+
+O pipeline deve publicar um conjunto pequeno de artefatos agregados:
+
+```text
+web/public/data/
+├── executive-summary.json
+├── monthly-profitability.json
+├── channels.json
+├── products.json
+└── customer-segments.json
+```
+
+Isso gera três benefícios práticos: nenhum segredo de banco chega à aplicação pública, o showcase continua funcionando sem infraestrutura PostgreSQL pública e os números exibidos na landing page são exatamente os mesmos números reconciliados no warehouse.
+
+Next.js recomenda atualmente o App Router e possui checklist específico de produção envolvendo rendering, fetching/cache, segurança, metadata, type safety e Core Web Vitals; Tailwind mantém um guia específico para integração com Next.js. citeturn1search3turn1search0
+
+Para os gráficos, `ResponsiveContainer` do Recharts é adequado para o showcase porque adapta o gráfico ao tamanho do elemento pai. citeturn1search10
+
+## Lacunas críticas e correções
+
+### Custos variáveis
+
+Este é o gap técnico mais importante.
+
+O briefing exige:
+
+\[
+MC = Receita\ Líquida - CMV - Frete\ Real - Custos\ Variáveis
+\]
+
+mas o código atual implementa:
+
+\[
+MC = Receita\ Líquida - CMV - Frete
+\]
+
+A implementação atual pode ser verificada tanto na função Python quanto no `CHECK` do PostgreSQL. fileciteturn9file0L2-L2 fileciteturn13file0L2-L2
+
+Isso significa que o atual valor reproduzido de aproximadamente **31,68% de margem ponderada não é diretamente comparável à métrica definida no novo briefing**, pois ainda não desconta a categoria `Custos Variáveis`. fileciteturn23file0L2-L2
+
+Minha proposta é criar `variable_costs.csv` sem nenhuma margem pronta:
+
+```text
+order_item_id
+payment_fee_rate
+channel_fee_rate
+commission_rate
+packaging_cost
+```
+
+Exemplo de regra sintética:
+
+| Canal | Gateway/pagamento | Taxa do canal | Comissão |
+|---|---:|---:|---:|
+| Loja Física | 1,0% | 0% | 2,0% |
+| E-commerce | 3,2% | 0% | 0,5% |
+| Marketplace | 3,5% | 14,5% | 0,5% |
+| Venda Direta | 1,5% | 0% | 2,0% |
+
+Esses valores devem ser tratados explicitamente como **hipóteses sintéticas do case**, não benchmarks de mercado.
+
+A transformação passa a derivar:
+
+```python
+variable_cost_rate = (
+    payment_fee_rate
+    + channel_fee_rate
+    + commission_rate
+)
+
+variable_cost_value = (
+    net_revenue * variable_cost_rate
+    + packaging_cost
+)
+
+contribution_margin = (
+    net_revenue
+    - total_product_cost
+    - freight_allocated
+    - variable_cost_value
+)
+```
+
+Nenhum campo de margem entra no raw.
+
+### Pandera
+
+O requisito especifica Pandera, mas o projeto hoje implementa um contrato próprio em `schemas.py` e uma rotina extensa de validação em `quality.py`; `requirements.txt` também não possui Pandera. fileciteturn15file0L2-L2 fileciteturn16file0L2-L2 fileciteturn17file0L2-L2
+
+Isso não significa que a qualidade atual seja fraca. Pelo contrário: a implementação verifica estrutura, PKs, FKs, valores monetários, percentuais, datas, devoluções excessivas e coerência de status. fileciteturn16file0L2-L2
+
+Mas, para cumprir o briefing, eu faria uma arquitetura híbrida:
+
+```text
+Pandera
+  └─ tipos, colunas, nullability, ranges, enums, coercion
+
+quality.py
+  └─ FKs, regras entre tabelas, datas cruzadas, status/devoluções
+
+reconciliation.py
+  └─ invariantes financeiras e comparação origem x warehouse
+```
+
+Pandera foi concebido exatamente para contratos de DataFrames, incluindo esquema de colunas, tipos, coercion e validações; também permite avaliação `lazy` para agregar múltiplas falhas antes de levantar o erro. citeturn0search26turn0search27
+
+Portanto, **não substituiria as validações atuais por Pandera**. Usaria Pandera como primeira linha declarativa e conservaria os checks relacionais customizados.
+
+### Raw realmente raw
+
+Hoje as tabelas `raw` e `staging` são construídas dinamicamente pelo loader via SQLAlchemy; o raw utiliza strings e o staging recebe tipos. A abordagem funciona, mas não cumpre literalmente o pedido de “scripts SQL DDL para criação das tabelas e camadas”. fileciteturn14file0L2-L2
+
+Eu passaria os contratos físicos para SQL versionado:
+
+```text
+sql/
+├── 01_create_schema.sql
+├── 02_create_dimensions.sql
+├── 03_create_fact_sales.sql
+├── 04_analytics_views.sql
+├── 05_create_indexes.sql
+└── 06_validation_queries.sql
+```
+
+Para um portfólio, manter `raw`, `staging` e `analytics` como schemas dentro do mesmo banco é uma escolha razoável. PostgreSQL oferece schemas justamente como namespaces dentro de um database, permitindo agrupar objetos e qualificar explicitamente as relações. citeturn0search10
+
+### Concorrência e atomicidade
+
+Uma decisão do projeto atual que eu **manteria integralmente** é a transação única envolvendo carga e reconciliação, protegida por:
+
+```sql
+SELECT pg_try_advisory_xact_lock(831024915)
+```
+
+dentro de `engine.begin()`. fileciteturn7file0L2-L2
+
+PostgreSQL documenta que advisory locks em nível de transação são liberados automaticamente quando a transação termina, o que torna essa abordagem adequada para impedir duas cargas concorrentes do mesmo pipeline. citeturn0search0turn0search1
+
+Para o volume proposto de ~100 mil itens, manter **full refresh transacional** é defensável e mais simples de demonstrar. Incremental load deve ser roadmap, não complexidade artificial no MVP.
+
+### Docker
+
+O Compose atual já está bem desenhado: PostgreSQL possui healthcheck, pgAdmin usa profile opcional `tools`, as portas são bindadas a `127.0.0.1` e pgAdmin depende do banco saudável. fileciteturn5file0L2-L2
+
+O uso de `condition: service_healthy` corresponde ao comportamento documentado oficialmente pelo Docker Compose: dependências marcadas dessa forma aguardam o healthcheck passar antes de iniciar o serviço dependente. citeturn0search3turn0search4
+
+Eu só acrescentaria no release final o pin de versões/digests de imagem para maior reprodutibilidade.
+
+## Plano de ação faseado
+
+O plano abaixo parte do **estado real do repositório**, e não do estado vazio descrito no briefing inicial.
+
+| Milestone | Entrega | Gate de aceite |
+|---|---|---|
+| Baseline técnico | Congelar a implementação atual como baseline | CI verde, reconciliação zero, testes atuais verdes |
+| Contrato financeiro V2 | Custos variáveis, nova fórmula de contribuição, documentação | Python, SQL e DAX conciliam exatamente |
+| Data Quality V2 | Pandera + regras relacionais atuais | Fonte inválida falha antes da carga |
+| Warehouse V2 | DDL explícito para raw/staging/analytics, constraints e índices | Banco recriável apenas via repositório |
+| Modelo semântico | Modelo Power BI real | Relações validadas e medidas conferidas contra SQL |
+| Decision Support | What-if, break-even, quadrantes e alertas | Cenários possuem checks manuais conhecidos |
+| Showcase Web | Next.js + Tailwind + Recharts | Build de produção verde, responsive e sem credenciais |
+| Release de portfólio | README, screenshots reais, arquitetura e publicação | Clone → setup → pipeline → BI/web reproduzível |
+
+### Baseline técnico
+
+Antes de mudar fórmulas, eu preservaria o excelente trabalho que já existe:
+
+```text
+59 testes
+92% de cobertura registrada
+reconciliação monetária com diferença zero
+rollback de falha
+rerun sem duplicação
+CI Python 3.12/3.13 + PostgreSQL
+```
+
+Esses resultados estão registrados no relatório interno do próprio projeto; a execução remota de CI indicada pelo README também consta como bem-sucedida na API do GitHub. fileciteturn23file0L2-L2 fileciteturn20file0L2-L2
+
+Depois da inclusão de custos variáveis, os totais históricos de contribuição e margem **necessariamente mudarão**. Isso é esperado, e os novos valores devem substituir os anteriores somente depois de uma nova reconciliação.
+
+### Modelo semântico Power BI
+
+Em vez de armazenar apenas um `.pbix`, considero mais forte para este portfólio usar também **Power BI Project/PBIP + TMDL**, porque o formato separa o modelo e o relatório em arquivos textuais e é voltado a source control e CI/CD. A ressalva é importante: a documentação da Microsoft ainda classifica PBIP como recurso em preview. citeturn2search0turn2search2turn2search3
+
+Estrutura sugerida:
+
+```text
+powerbi/
+├── SalesProfitability.pbip
+├── SalesProfitability.Report/
+├── SalesProfitability.SemanticModel/
+├── measures.dax
+├── model_schema.md
+├── dashboard-specification.md
+└── screenshots/
+```
+
+O `.pbix` pode continuar como artefato de release para facilidade de demonstração, enquanto PBIP/TMDL fornece o componente de engenharia/versionamento.
+
+### Showcase web
+
+A aplicação pública deve ser uma vitrine executiva, não uma tentativa de duplicar integralmente o Power BI:
+
+```text
+web/
+├── app/
+│   ├── page.tsx
+│   └── methodology/page.tsx
+├── components/
+│   ├── kpi-card.tsx
+│   ├── revenue-margin-chart.tsx
+│   ├── profitability-quadrant.tsx
+│   └── architecture.tsx
+├── lib/
+│   └── analytics.ts
+├── public/data/
+└── package.json
+```
+
+Eu priorizaria:
+
+```text
+Hero
+→ problema de negócio
+→ KPIs executivos
+→ Receita x Margem
+→ quadrante produtos
+→ comparação canais
+→ arquitetura
+→ metodologia
+→ Power BI screenshots
+→ GitHub / portfólio
+```
+
+Não há necessidade de reproduzir o simulador completo do Power BI na primeira versão web.
+
+## Implementação inicial revisada
+
+O código inicial pedido no briefing **já existe no repositório**, inclusive `docker-compose.yml`, `generate_mock_data.py`, DDL, pipeline e documentação DAX. fileciteturn3file0L2-L2
+
+Por isso, em vez de simplesmente duplicá-lo, preparei um **bundle V2 de referência** contendo as correções necessárias para aderir ao escopo original:
+
+[Baixar implementação V2 de referência](sandbox:/mnt/data/sales-profitability-intelligence-v2-reference.zip)
+
+O pacote contém:
+
+```text
+sales-profitability-intelligence-v2/
+├── docker-compose.yml
+├── scripts/
+│   └── generate_mock_data.py
+├── sql/
+│   ├── 01_create_schema.sql
+│   ├── 02_create_dimensions.sql
+│   ├── 03_create_fact_sales.sql
+│   └── 04_analytics_views.sql
+├── src/
+│   ├── pipeline.py
+│   └── validation/
+│       └── schemas.py
+├── powerbi/
+│   └── measures.dax
+└── README_PATCH_NOTES.md
+```
+
+**Esse pacote deve ser tratado como delta/referência, não como substituição cega do repositório atual.** O pipeline atual já possui `Decimal`, reconciliação, rollback, relatórios de qualidade, carga transacional, insights e testes que são mais completos que o skeleton reduzido do bundle. fileciteturn7file0L2-L2 fileciteturn9file0L2-L2
+
+### Gerador de dados
+
+O gerador atual já tem boa qualidade para portfólio: é determinístico por seed, possui sazonalidade em novembro/dezembro, crescimento em 2025, concentração de grandes clientes, canais distintos, devoluções de maior risco em determinados produtos, frete mais caro no Marketplace/Norte e descontos diferenciados. fileciteturn6file0L2-L2
+
+A mudança essencial da V2 é adicionar:
+
+```python
+out["variable_costs"].append({
+    "order_item_id": item_id,
+    "payment_fee_rate": f"{payment_rate:.4f}",
+    "channel_fee_rate": f"{channel_rate:.4f}",
+    "commission_rate": f"{commission_rate:.4f}",
+    "packaging_cost": f"{rng.uniform(0.80, 5.00):.2f}",
+})
+```
+
+A margem continua não existindo no raw.
+
+### DDL da fato revisado
+
+O trecho crítico da nova fato deve ser:
+
+```sql
+CREATE TABLE analytics.fact_sales (
+    sale_key bigint PRIMARY KEY,
+    order_id integer NOT NULL,
+    order_item_id integer NOT NULL UNIQUE,
+
+    date_key integer NOT NULL
+        REFERENCES analytics.dim_date(date_key),
+    customer_key integer NOT NULL
+        REFERENCES analytics.dim_customer(customer_key),
+    product_key integer NOT NULL
+        REFERENCES analytics.dim_product(product_key),
+    channel_key smallint NOT NULL
+        REFERENCES analytics.dim_channel(channel_key),
+    seller_key integer NOT NULL
+        REFERENCES analytics.dim_seller(seller_key),
+
+    quantity integer NOT NULL CHECK (quantity > 0),
+    returned_quantity integer NOT NULL
+        CHECK (returned_quantity BETWEEN 0 AND quantity),
+
+    unit_price numeric(18,2) NOT NULL,
+    unit_cost numeric(18,2) NOT NULL,
+
+    discount_percentage numeric(8,4) NOT NULL
+        CHECK (discount_percentage BETWEEN 0 AND 1),
+
+    gross_revenue numeric(18,2) NOT NULL,
+    discount_value numeric(18,2) NOT NULL,
+    return_value numeric(18,2) NOT NULL,
+    net_revenue numeric(18,2) NOT NULL,
+
+    total_product_cost numeric(18,2) NOT NULL,
+    freight_allocated numeric(18,2) NOT NULL,
+
+    variable_cost_rate numeric(8,4) NOT NULL,
+    variable_cost_fixed numeric(18,2) NOT NULL,
+    variable_cost_value numeric(18,2) NOT NULL,
+
+    contribution_margin numeric(18,2) NOT NULL,
+    contribution_margin_percentage numeric(20,10),
+
+    CHECK (
+        net_revenue =
+        gross_revenue - discount_value - return_value
+    ),
+
+    CHECK (
+        contribution_margin =
+        net_revenue
+        - total_product_cost
+        - freight_allocated
+        - variable_cost_value
+    )
+);
+```
+
+O segundo `CHECK` transforma a regra financeira em um **invariante do banco**, não apenas em convenção do Python.
+
+### Pipeline de produção
+
+O pipeline final deve continuar seguindo o padrão que já existe:
+
+```python
+read_sources()
+    ↓
+validate_with_pandera()
+    ↓
+validate_relationships()
+    ↓
+build_dimensions()
+    ↓
+build_fact()
+    ↓
+begin transaction
+    ↓
+advisory lock
+    ↓
+load raw
+    ↓
+load staging
+    ↓
+load dimensions/fact
+    ↓
+reconcile source ↔ warehouse
+    ↓
+generate insights
+    ↓
+commit
+    ↓
+export web JSON
+```
+
+A ordem é importante: **nenhuma publicação para BI/web deve acontecer antes de a reconciliação financeira ser aprovada**.
+
+## Modelo financeiro e DAX
+
+A camada DAX deve ser simples onde o warehouse já calculou corretamente os valores. Não há ganho em reimplementar toda a regra financeira duas vezes.
+
+A Microsoft recomenda o uso de modelos dimensionais/star schema no Power BI, e `SELECTEDVALUE` é apropriado para recuperar a única seleção de uma tabela de parâmetro desconectada. citeturn0search16turn1search6
+
+### Medidas principais
+
+Após adicionar custos variáveis à fato:
+
+```dax
+Receita Bruta =
+SUM(fact_sales[gross_revenue])
+
+Descontos =
+SUM(fact_sales[discount_value])
+
+Devoluções =
+SUM(fact_sales[return_value])
+
+Receita Líquida =
+SUM(fact_sales[net_revenue])
+
+CMV =
+SUM(fact_sales[total_product_cost])
+
+Frete Real =
+SUM(fact_sales[freight_allocated])
+
+Custos Variáveis =
+SUM(fact_sales[variable_cost_value])
+
+Margem de Contribuição =
+    [Receita Líquida]
+    - [CMV]
+    - [Frete Real]
+    - [Custos Variáveis]
+
+Margem % =
+DIVIDE(
+    [Margem de Contribuição],
+    [Receita Líquida]
+)
+
+Pedidos =
+DISTINCTCOUNT(fact_sales[order_id])
+
+Ticket Médio =
+DIVIDE(
+    [Receita Líquida],
+    [Pedidos]
+)
+
+Desconto Médio % =
+DIVIDE(
+    [Descontos],
+    [Receita Bruta]
+)
+
+Quantidade Vendida =
+SUM(fact_sales[quantity])
+
+Quantidade Devolvida =
+SUM(fact_sales[returned_quantity])
+
+Taxa de Devolução =
+DIVIDE(
+    [Quantidade Devolvida],
+    [Quantidade Vendida]
+)
+```
+
+A implementação atual já usa `DIVIDE` para margem, o que evita converter artificialmente receita zero em margem `0%`. fileciteturn10file0L2-L2
+
+### What-if de desconto
+
+A tabela desconectada:
+
+```dax
+Desconto Simulado =
+GENERATESERIES(0, 0.30, 0.01)
+```
+
+e a seleção:
+
+```dax
+Desconto Selecionado =
+SELECTEDVALUE(
+    'Desconto Simulado'[Value],
+    0
+)
+```
+
+Power BI possui suporte oficial a parâmetros What-if para visualizar o impacto de variáveis em medidas. citeturn0search30
+
+A receita simulada:
+
+```dax
+Receita Simulada =
+SUMX(
+    fact_sales,
+    ROUND(
+        (
+            fact_sales[quantity]
+            - fact_sales[returned_quantity]
+        )
+        * fact_sales[unit_price]
+        * (1 - [Desconto Selecionado]),
+        2
+    )
+)
+```
+
+Ao contrário da medida atual do repositório, a V2 também precisa recalcular os custos percentuais dependentes da receita:
+
+```dax
+Custos Variáveis Simulados =
+SUMX(
+    fact_sales,
+
+    VAR ReceitaLinha =
+        ROUND(
+            (
+                fact_sales[quantity]
+                - fact_sales[returned_quantity]
+            )
+            * fact_sales[unit_price]
+            * (1 - [Desconto Selecionado]),
+            2
+        )
+
+    RETURN
+        ROUND(
+            ReceitaLinha
+                * fact_sales[variable_cost_rate]
+                + fact_sales[variable_cost_fixed],
+            2
+        )
+)
+```
+
+Margem simulada:
+
+```dax
+Margem Simulada =
+    [Receita Simulada]
+    - [CMV]
+    - [Frete Real]
+    - [Custos Variáveis Simulados]
+
+Margem Simulada % =
+DIVIDE(
+    [Margem Simulada],
+    [Receita Simulada]
+)
+
+Impacto Margem =
+    [Margem Simulada]
+    - [Margem de Contribuição]
+```
+
+### Volume necessário para preservar a contribuição
+
+Sob a hipótese simplificadora de mesmo mix, mesma taxa de devolução e custos proporcionais ao volume:
+
+```dax
+Volume Necessário % =
+IF(
+    [Margem Simulada] > 0
+        && [Margem de Contribuição] > 0,
+
+    DIVIDE(
+        [Margem de Contribuição],
+        [Margem Simulada]
+    ) - 1,
+
+    BLANK()
+)
+```
+
+Isso é um **cenário matemático**, não uma previsão de demanda. O próprio projeto atual documenta corretamente que o simulador não modela elasticidade, estoque ou capacidade. fileciteturn22file0L2-L2
+
+### Break-even e desconto máximo
+
+Com custos variáveis percentuais, a fórmula precisa ser um pouco mais completa que a versão atual.
+
+Definindo:
+
+\[
+B = \text{receita sem desconto}
+\]
+
+\[
+C = CMV + Frete + CustosVariáveisFixos
+\]
+
+\[
+r = \text{taxa variável sobre receita}
+\]
+
+\[
+m = \text{margem mínima desejada}
+\]
+
+a receita após desconto é:
+
+\[
+R = B(1-d)
+\]
+
+e:
+
+\[
+\frac{R-rR-C}{R} \ge m
+\]
+
+logo:
+
+\[
+d_{max}
+=
+1 -
+\frac{C}
+{B(1-r-m)}
+\]
+
+Em DAX:
+
+```dax
+Base sem Desconto =
+SUMX(
+    fact_sales,
+    (
+        fact_sales[quantity]
+        - fact_sales[returned_quantity]
+    )
+    * fact_sales[unit_price]
+)
+
+Taxa Variável Ponderada =
+DIVIDE(
+    SUMX(
+        fact_sales,
+        fact_sales[net_revenue]
+            * fact_sales[variable_cost_rate]
+    ),
+    [Receita Líquida]
+)
+
+Custos Fixos por Volume =
+    [CMV]
+    + [Frete Real]
+    + SUM(fact_sales[variable_cost_fixed])
+
+Margem Mínima Meta =
+0.15
+
+Desconto Máximo Sustentável =
+VAR Base =
+    [Base sem Desconto]
+
+VAR TaxaVar =
+    [Taxa Variável Ponderada]
+
+VAR Meta =
+    [Margem Mínima Meta]
+
+VAR Denominador =
+    1 - TaxaVar - Meta
+
+RETURN
+    IF(
+        Base > 0
+            && Denominador > 0,
+
+        1
+            - DIVIDE(
+                [Custos Fixos por Volume],
+                Base * Denominador
+            ),
+
+        BLANK()
+    )
+```
+
+Para o **break-even puro**, basta usar `Meta = 0`.
+
+Eu manteria o resultado econômico bruto, inclusive quando negativo. Um desconto sustentável negativo significa:
+
+> mesmo com 0% de desconto, aquele produto/contexto não consegue atingir a margem mínima.
+
+Esconder esse valor com `MAX(0, ...)` eliminaria justamente um dos melhores alertas gerenciais do projeto.
+
+### Página de simulador
+
+A página deveria mostrar simultaneamente:
+
+```text
+Desconto Atual
+Desconto Simulado
+Receita Atual
+Receita Simulada
+Margem Atual
+Margem Simulada
+Impacto R$
+Impacto p.p.
+Volume Necessário %
+Desconto Máximo Sustentável
+```
+
+e um status:
+
+```text
+SE desconto_simulado <= desconto_maximo
+    "Dentro da política de margem"
+ELSE
+    "Desconto compromete a meta de margem"
+```
+
+## Critérios de aceite e entrega final
+
+O projeto deve ser considerado concluído apenas quando os seguintes gates estiverem verdadeiros.
+
+### Engenharia de dados
+
+O dataset precisa continuar determinístico e regenerável; os arquivos raw não podem conter `lucro`, `margem` ou `contribution_margin`. O pipeline deve bloquear schema inválido antes da escrita, preservar `Decimal/numeric` para reconciliações monetárias e falhar integralmente caso origem e warehouse não conciliem. O projeto atual já possui a maior parte dessa infraestrutura e registra reconciliação zero para suas sete métricas vigentes. fileciteturn23file0L2-L2
+
+O novo gate deve adicionar:
+
+```text
+Variable Cost origem/derivação = warehouse
+Contribution Margin Python = PostgreSQL
+Contribution Margin PostgreSQL = Power BI
+```
+
+com tolerância monetária efetiva de:
+
+```text
+R$ 0,00
+```
+
+para totais reconciliáveis em centavos.
+
+### Banco
+
+Os três schemas precisam poder ser recriados a partir de um banco vazio; PKs, FKs e `CHECK`s devem estar ativos; rerun não pode duplicar registros; falhas antes do commit não podem deixar snapshots parciais; o pipeline precisa rejeitar execução concorrente. A abordagem atual já cobre atomicidade e advisory lock. fileciteturn7file0L2-L2
+
+### Power BI
+
+Não considero a camada Power BI “entregue” apenas porque existem Markdown e DAX. O próprio README atual faz essa distinção corretamente. fileciteturn4file0L2-L2
+
+O gate real é:
+
+```text
+PBIX/PBIP criado
++ PostgreSQL conectado
++ relacionamentos validados
++ DAX executado no Desktop
++ totais conciliados com SQL
++ cinco páginas implementadas
++ screenshots reais
++ What-if testado
++ break-even testado
+```
+
+As cinco páginas finais:
+
+```text
+Executivo
+Produtos
+Clientes
+Canais
+Simulador
+```
+
+O scatter de Produtos deve usar:
+
+```text
+X = Receita Líquida
+Y = Margem %
+Bubble Size = Quantidade/Receita
+```
+
+produzindo os quadrantes:
+
+```text
+Alta receita / Alta margem
+Alta receita / Baixa margem
+Baixa receita / Alta margem
+Baixa receita / Baixa margem
+```
+
+### Web
+
+O gate web:
+
+```bash
+npm run lint
+npm run build
+```
+
+sem falhas, sem variáveis sensíveis expostas, dados responsivos, metadata/SEO configurados e charts adaptáveis. A documentação atual do Next.js recomenda validar segurança, metadata, type safety e Core Web Vitals antes de produção. citeturn1search3
+
+### CI final
+
+O workflow existente já executa Ruff, pytest e integração PostgreSQL em GitHub Actions. fileciteturn18file0L2-L2
+
+Eu o expandiria para:
+
+```text
+Python lint
+→ unit tests
+→ PostgreSQL integration
+→ financial reconciliation test
+→ generator smoke test
+→ web npm ci
+→ web lint
+→ web build
+```
+
+e, quando PBIP/TMDL estiver versionado, adicionaria uma etapa de validação dos artefatos textuais do projeto Power BI. PBIP/TMDL é particularmente interessante aqui por ser orientado a arquivos versionáveis e integração Git, embora ainda deva ser usado considerando seu status atual de preview. citeturn2search2turn2search7
+
+### Estado final recomendado
+
+A estrutura alvo fica:
+
+```text
+sales-profitability-intelligence/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   └── samples/
+├── scripts/
+│   ├── generate_mock_data.py
+│   ├── initialize_database.py
+│   └── verify_database.py
+├── src/
+│   ├── analytics/
+│   ├── config/
+│   ├── database/
+│   ├── ingestion/
+│   ├── transformation/
+│   ├── validation/
+│   └── pipeline.py
+├── sql/
+│   ├── 01_create_schema.sql
+│   ├── 02_create_dimensions.sql
+│   ├── 03_create_fact_sales.sql
+│   ├── 04_analytics_views.sql
+│   ├── 05_create_indexes.sql
+│   └── 06_validation_queries.sql
+├── powerbi/
+│   ├── SalesProfitability.pbip
+│   ├── SalesProfitability.Report/
+│   ├── SalesProfitability.SemanticModel/
+│   ├── measures.dax
+│   ├── model_schema.md
+│   └── screenshots/
+├── web/
+│   ├── app/
+│   ├── components/
+│   ├── lib/
+│   └── public/data/
+├── tests/
+│   ├── test_financial_metrics.py
+│   ├── test_data_quality.py
+│   ├── test_reconciliation.py
+│   ├── test_pipeline.py
+│   └── test_variable_costs.py
+├── docs/
+│   ├── architecture.md
+│   ├── business-rules.md
+│   ├── data-model.md
+│   ├── data-dictionary.md
+│   └── adr/
+├── docker-compose.yml
+├── pyproject.toml
+├── requirements.txt
+├── .env.example
+└── README.md
+```
+
+A prioridade objetiva é **não gastar esforço refazendo o que já está bom**. A sequência de maior retorno é:
+
+**custos variáveis → Pandera → nova reconciliação → Power BI real → screenshots/PBIP → Next.js → release pública**.
+
+Com essas correções, o case deixa de ser apenas “Python + PostgreSQL + dashboard” e passa a demonstrar de forma defensável **contratos de dados, qualidade, modelagem dimensional, invariantes financeiros, transações, reconciliação, CI, camada semântica, análise de cenários e data product/web showcase** — exatamente o tipo de projeto que diferencia um portfólio de Analytics Engineering de um portfólio composto apenas por visualizações.

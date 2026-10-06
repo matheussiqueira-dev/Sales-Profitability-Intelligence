@@ -1,5 +1,7 @@
 # Plano e diagnóstico inicial
 
+> Registro histórico do MVP. Plano vigente: [plano de entrega sênior](senior-delivery-plan.md).
+
 Em 05/10/2026, o remoto confirmado foi
 `https://github.com/matheussiqueira-dev/Sales-Profitability-Intelligence.git`.
 Branch inicial `main`, commit `5fdb74e`, apenas LICENSE MIT, sem código ou configurações.
