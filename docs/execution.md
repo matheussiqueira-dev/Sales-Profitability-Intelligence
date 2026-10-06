@@ -120,5 +120,5 @@ Não apague volumes para resolver autenticação. Erro de qualidade: consultar
 O pipeline não imprime DSN nem credenciais; pode ser chamado por código para
 diagnóstico local com exceções SQL parametrizadas ocultas.
 
-Power BI: siga [guia](../powerbi/README.md). GitHub Actions só terá evidência remota
-depois de push autorizado; configuração local não significa CI executado no GitHub.
+Power BI: siga [guia](../powerbi/README.md). A execução remota de GitHub Actions
+confirmada após o push autorizado está registrada no [relatório](delivery-report.md).

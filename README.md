@@ -128,7 +128,7 @@ scripts/           geração, bootstrap, verificação e dicionário
 tests/             regras, qualidade, integração e rollback
 powerbi/           especificação para implementação manual
 docs/              arquitetura, modelo, contratos, execução, evidências
-.github/workflows/ CI configurada, execução remota pendente de push
+.github/workflows/ CI com testes unitários e integração PostgreSQL
 ```
 
 ## Executar localmente
@@ -153,7 +153,8 @@ powershell -ExecutionPolicy Bypass -File scripts/run_integration.ps1
 Integração exige banco isolado terminado em `_test`. Verifica rerun idempotente,
 views, schemas desconhecidos e rollback de falha após carga. Cobertura e resultado
 da última validação em [relatório de entrega](docs/delivery-report.md).
-GitHub Actions foi configurada; nenhuma execução remota é alegada antes de push.
+GitHub Actions passou em Linux: unitários com Python 3.12/3.13 e integração PostgreSQL.
+[Execução confirmada](https://github.com/matheussiqueira-dev/Sales-Profitability-Intelligence/actions/runs/37403390421).
 
 ## Screenshots
 

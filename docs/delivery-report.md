@@ -80,8 +80,9 @@ pip check passou. Imports reais pelo pipeline e testes; compileall também verif
 
 Testes incluem os dez casos financeiros do texto, dados inválidos, devolução acumulada,
 rateio, centavos, limite sustentável, simulador, reconciliação corrompida, carga repetida,
-recusa de tabelas desconhecidas e rollback após falha financeira. Testes em 3.12/Linux
-estão configurados no CI, mas não foram executados remotamente nesta entrega.
+recusa de tabelas desconhecidas e rollback após falha financeira. Testes unitários
+em Python 3.12/3.13 no Linux e integração PostgreSQL também passaram remotamente
+após a publicação autorizada, conforme evidência ao final do relatório.
 
 Falhas encontradas e resolvidas: tentativa localhost/IPv6 no Windows (host loopback
 explícito + timeout); Pandas inferindo Decimal como VARCHAR (tipos PostgreSQL
@@ -109,7 +110,7 @@ README orientado ao problema, arquitetura, modelo, dicionário gerado do Postgre
 contrato financeiro, dois ADRs, execução PowerShell, plano inicial e este relatório.
 Bootstrap preserva `.env`, CSVs e volumes; validações e scripts não enviam push.
 GitHub Actions configurada com testes unitários 3.12/3.13 e PostgreSQL isolado.
-Não há resultado remoto de CI antes de autorização de push.
+Publicação autorizada pelo usuário e CI remoto validado, conforme registro abaixo.
 
 Bootstrap completo executado via PowerShell, após restart do Compose sem remoção
 de volumes: pipeline passou, 58 testes unitários passaram (integração fora desse
@@ -128,14 +129,24 @@ não corresponde a conta real. Logs e URL ocultam senha/parâmetros.
 
 ## 8. Pendências e próximos passos
 
-1. Autorização explícita para git push; nenhuma publicação realizada.
-2. Executar workflow no GitHub e observar resultados reais.
-3. Montar/validar Power BI Desktop e salvar PBIX/screenhots reais.
-4. Revisar com negócio os limites do MVP: impostos/comissões/CAC/custos fixos,
+1. Montar/validar Power BI Desktop e salvar PBIX/screenhots reais.
+2. Revisar com negócio os limites do MVP: impostos/comissões/CAC/custos fixos,
    devoluções recuperáveis, custo estático e competência da data de venda.
-5. Para produção: roles de menor privilégio, TLS, backup/restauração, migrações,
+3. Para produção: roles de menor privilégio, TLS, backup/restauração, migrações,
    incremental e política de atualização. Aplicação web segue roadmap.
 
 Quality gates locais de ambiente, geração, Docker/PostgreSQL, três camadas, dimensões,
-fato, reconciliação, testes, Ruff, documentação e Git foram executados. Aprovação
-de publicação, dashboard real e operação produtiva permanecem separados.
+fato, reconciliação, testes, Ruff, documentação e Git foram executados. Dashboard
+real e operação produtiva permanecem pendentes; publicação e CI remoto estão confirmados.
+
+## 9. Publicação e evidência remota
+
+Em 05/10/2026 (America/Fortaleza), o usuário autorizou o push. Os sete commits
+iniciais foram publicados até 6e8e5f9. A primeira execução falhou na criação do
+container por aspas simples no healthcheck do runner; nenhum teste de integração
+chegou a rodar nessa tentativa. A correção d37a143 usa aspas duplas.
+
+[Execução 37403390421](https://github.com/matheussiqueira-dev/Sales-Profitability-Intelligence/actions/runs/37403390421)
+concluiu com success no commit d37a143: unit (3.12), unit (3.13) e integration.
+A atualização documental posterior não altera o código validado. Nenhum PBIX ou
+dashboard foi publicado como consequência do push do código.
