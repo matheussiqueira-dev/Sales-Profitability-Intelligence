@@ -7,6 +7,7 @@ from sqlalchemy import text
 from scripts.generate_mock_data import generate, write_dataset
 from src.config.settings import Settings
 from src.database.connection import engine_for
+from src.database.loader import initialize, read_statements
 from src.pipeline import run
 
 
@@ -40,6 +41,20 @@ def test_postgres_repeatable_load_and_rollback(tmp_path, monkeypatch):
                 ).scalar_one()
                 == 96
             )
+            for statement in read_statements("07_example_queries.sql"):
+                assert connection.execute(text(statement)).returns_rows
+        # Unknown warehouse tables must stop refresh without touching their content.
+        with engine.begin() as connection:
+            savepoint = connection.begin_nested()
+            connection.execute(text("CREATE TABLE staging.foreign_table(value text)"))
+            connection.execute(text("INSERT INTO staging.foreign_table VALUES ('preserve')"))
+            with pytest.raises(ValueError, match="Unexpected tables"):
+                initialize(connection)
+            assert (
+                connection.execute(text("SELECT value FROM staging.foreign_table")).scalar_one()
+                == "preserve"
+            )
+            savepoint.rollback()
         # Force a failure after insertion, verify previous committed snapshot survives.
         monkeypatch.setattr(
             "src.pipeline.reconcile_sql", lambda connection, report: {"passed": False}

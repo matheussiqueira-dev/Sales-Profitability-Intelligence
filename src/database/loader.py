@@ -12,9 +12,15 @@ DIMENSIONS = ["dim_date", "dim_customer", "dim_product", "dim_channel", "dim_sel
 
 def execute_file(connection, name):
     # All statements are repository-owned static SQL; no interpolated external inputs.
-    for statement in (SQL_PATH / name).read_text(encoding="utf-8").split(";"):
-        if statement.strip():
-            connection.execute(text(statement))
+    for statement in read_statements(name):
+        connection.execute(text(statement))
+
+
+def read_statements(name):
+    # These repository files contain only plain statements, without SQL functions/dollar quoting.
+    content = (SQL_PATH / name).read_text(encoding="utf-8")
+    content = "\n".join(line for line in content.splitlines() if not line.lstrip().startswith("--"))
+    return [statement for statement in content.split(";") if statement.strip()]
 
 
 def initialize(connection):

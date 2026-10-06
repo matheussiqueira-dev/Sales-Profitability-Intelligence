@@ -96,7 +96,7 @@ def main():
     except Exception as exc:
         # Avoid DSNs/SQL parameters in terminal logs; quality details live in report.
         LOG.error(
-            "Pipeline failed (%s). Database changes were not accepted; inspect reports.",
+            "Pipeline failed (%s). Inspect reports and pipeline_metadata before retrying.",
             type(exc).__name__,
         )
         raise SystemExit(1) from None
