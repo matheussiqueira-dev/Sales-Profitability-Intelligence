@@ -3,6 +3,38 @@
 Uma plataforma analítica para descobrir quais produtos, clientes e canais realmente
 geram rentabilidade após considerar descontos, custos, fretes e devoluções.
 
+## V2 — entrega vigente
+
+Rentabilidade por **margem de contribuição**, com taxas de pagamento/canal/comissão
+e embalagem incluídas. [Três achados e decisões](docs/v2-business-findings.md) ·
+[plano executado](docs/v2-execution-plan.md) · [evidência Power BI](powerbi/validation.md).
+
+![Showcase executivo real, build de produção em desktop](docs/images/web-desktop.png)
+
+O warehouse V2 foi migrado e conciliado: receita líquida **R$109.994.862,14**,
+custos variáveis **R$9.740.706,54**, contribuição **R$25.104.575,63**, margem **22,82%**.
+Os oito totais e cenários 0/10/20/30% foram executados no motor DAX do Desktop,
+com diferença monetária zero em relação a Python/PostgreSQL.
+
+Power BI: [PBIP](powerbi/project/SalesProfitability.pbip), cinco páginas PBIR e modelo
+TMDL aberto/carregado/salvo no Desktop. O modo CSV de snapshot conciliado foi validado;
+autenticação/refresh direto PostgreSQL e revisão visual final são gates separados.
+Web: Next.js/TypeScript/Tailwind/Recharts, JSONs agregados com hashes, sem credenciais.
+[Execução da vitrine](web/README.md). Build, lint, tipagem e testes desktop/mobile passaram.
+
+Qualidade V2: Pandera sem coerção monetária para float + validações relacionais;
+DDL raw/staging explícito, migração V1→V2, CHECKs financeiros, lock, rollback e
+reconciliação. **69 testes passaram, cobertura 92%**. CI foi expandida para smoke do
+gerador, drift de DDL, web e artefatos Power BI; execução remota V2 ainda depende de push.
+
+Atualizar V1: `python scripts/upgrade_sources.py` adiciona somente a fonte de custos;
+depois `python -m src.pipeline`. Para clone novo, bootstrap gera oito fontes.
+Não altera `.env`, reescreve os sete CSVs V1 ou remove volumes automaticamente.
+Custos são hipóteses sintéticas e não benchmarks de mercado.
+
+As seções abaixo descrevem o MVP V1 preservado como histórico. Números de contribuição
+V1 excluem custos variáveis e foram substituídos pela entrega V2 acima.
+
 ## Overview e problema de negócio
 
 Faturamento alto não garante margem. Descontos agressivos, logística e devoluções
@@ -170,7 +202,8 @@ roles de menor privilégio, TLS, backups, retenção e migrações versionadas.
 
 Próximos passos: montar/validar PBIX → screenshots reais → revisão comercial das
 premissas → política histórica de custos e devoluções → incremental/orquestração.
-Aplicação web Next.js permanece expansão futura, conforme escopo confirmado.
+Na evolução V2 autorizada em 06/10/2026, a aplicação web foi implementada;
+o deploy público e a mudança de visibilidade do repositório continuam pendentes.
 
 ## Autor e licença
 
