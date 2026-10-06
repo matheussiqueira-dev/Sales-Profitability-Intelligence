@@ -1,0 +1,60 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
+  "name": "kpi3",
+  "position": {
+    "x": 954,
+    "y": 22,
+    "width": 294,
+    "height": 120,
+    "z": 0,
+    "tabOrder": 976
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_sales"
+                    }
+                  },
+                  "Property": "Volume Necessário %"
+                }
+              },
+              "queryRef": "fact_sales.Volume Necessário %",
+              "nativeQueryRef": "Volume Necessário %"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Volume Necessário %'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

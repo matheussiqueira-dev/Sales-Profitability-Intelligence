@@ -1,0 +1,24 @@
+model Model
+	culture: pt-BR
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: pt-BR
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation PBI_QueryOrder = ["dim_date","dim_customer","dim_product","dim_channel","dim_seller","fact_sales","DataFolder","ServerName","DatabaseName","SourceMode"]
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table dim_date
+ref table dim_customer
+ref table dim_product
+ref table dim_channel
+ref table dim_seller
+ref table fact_sales
+ref table 'Desconto Simulado'
+ref table DateTableTemplate_392ae222-852c-421b-bca3-bcf09247f037
+ref table LocalDateTable_58414cab-caad-40d7-9356-2cd02ed00995
+

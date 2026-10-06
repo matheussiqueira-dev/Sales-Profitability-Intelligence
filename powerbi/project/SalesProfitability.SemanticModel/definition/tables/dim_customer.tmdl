@@ -1,0 +1,63 @@
+table dim_customer
+	lineageTag: 53e992fe-7417-4b64-8d8e-79fe0c8f5f2d
+
+	column customer_key
+		dataType: int64
+		lineageTag: 4e11b30d-33df-4ca6-8829-e60c4be0ed91
+		summarizeBy: none
+		sourceColumn: customer_key
+
+	column customer_id
+		dataType: int64
+		lineageTag: e6fe2308-a7dd-4bbd-93b8-724b3eeaae54
+		summarizeBy: none
+		sourceColumn: customer_id
+
+	column customer_name
+		dataType: string
+		lineageTag: 1c1ca49c-e6e3-42c0-bb89-6e1e33334d94
+		summarizeBy: none
+		sourceColumn: customer_name
+
+	column customer_type
+		dataType: string
+		lineageTag: 5dd4a0ab-388f-44f6-ba61-414742b96940
+		summarizeBy: none
+		sourceColumn: customer_type
+
+	column segment
+		dataType: string
+		lineageTag: 150f0a23-b5b2-4f15-905f-d66c35db98e9
+		summarizeBy: none
+		sourceColumn: segment
+
+	column city
+		dataType: string
+		lineageTag: 6ddcde6d-dc13-4407-88b2-e1d0fe09547b
+		summarizeBy: none
+		sourceColumn: city
+
+	column state
+		dataType: string
+		lineageTag: 95b21266-a894-4588-8ac7-46b2639b0cb4
+		summarizeBy: none
+		sourceColumn: state
+
+	column region
+		dataType: string
+		lineageTag: dac13481-f09f-4918-9340-96765a8ab62b
+		summarizeBy: none
+		sourceColumn: region
+
+	partition dim_customer = m
+		mode: import
+		source =
+				let
+				    Csv = Csv.Document(File.Contents(DataFolder & "/dim_customer.csv"),[Delimiter=",",Encoding=65001,QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Csv,[PromoteAllScalars=true]),
+				    Snapshot = Table.TransformColumnTypes(Headers,{{"customer_key",Int64.Type},{"customer_id",Int64.Type},{"customer_name",type text},{"customer_type",type text},{"segment",type text},{"city",type text},{"state",type text},{"region",type text}},"en-US"),
+				    PostgreSQLSource = PostgreSQL.Database(ServerName,DatabaseName,[CreateNavigationProperties=false]),
+				    SqlTable = PostgreSQLSource{[Schema="analytics",Item="dim_customer"]}[Data],
+				    Result = if SourceMode = "PostgreSQL" then SqlTable else Snapshot
+				in Result
+

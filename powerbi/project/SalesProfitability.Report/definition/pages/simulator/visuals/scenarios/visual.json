@@ -1,0 +1,102 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
+  "name": "scenarios",
+  "position": {
+    "x": 24,
+    "y": 370,
+    "width": 1232,
+    "height": 266,
+    "z": 0,
+    "tabOrder": 394
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_channel"
+                    }
+                  },
+                  "Property": "channel_name"
+                }
+              },
+              "queryRef": "dim_channel.channel_name",
+              "nativeQueryRef": "channel_name"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_sales"
+                    }
+                  },
+                  "Property": "Margem Simulada"
+                }
+              },
+              "queryRef": "fact_sales.Margem Simulada",
+              "nativeQueryRef": "Margem Simulada"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_sales"
+                    }
+                  },
+                  "Property": "Margem Simulada %"
+                }
+              },
+              "queryRef": "fact_sales.Margem Simulada %",
+              "nativeQueryRef": "Margem Simulada %"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_sales"
+                    }
+                  },
+                  "Property": "Custos Variáveis Simulados"
+                }
+              },
+              "queryRef": "fact_sales.Custos Variáveis Simulados",
+              "nativeQueryRef": "Custos Variáveis Simulados"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Cenário por canal (mix e volume constantes)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

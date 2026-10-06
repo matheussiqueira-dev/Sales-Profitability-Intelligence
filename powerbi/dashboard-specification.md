@@ -1,5 +1,12 @@
 # Cinco páginas de decisão comercial
 
+Evolução V2: cinco páginas PBIR foram criadas, abertas, carregadas e salvas no Desktop;
+totais e cenários DAX executados e conciliados (validation.md). As recomendações
+visuais e interações abaixo continuam como critérios de revisão, não se assume que
+todo refinamento foi implementado por existir uma especificação. Screenshots finais,
+filtros sincronizados, acessibilidade e autenticação PostgreSQL devem constar do
+relatório V2 com evidência específica. A especificação V1 permanece como referência.
+
 Status: especificação pronta; implementação visual e testes no Desktop pendentes.
 Público: gestores comerciais e analistas. Pergunta central: o crescimento de receita
 está produzindo contribuição suficiente depois de descontos, devoluções e logística?

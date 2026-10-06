@@ -1,5 +1,18 @@
 # Implementação no Power BI Desktop
 
+## Projeto V2 executado
+
+Abrir [SalesProfitability.pbip](project/SalesProfitability.pbip). Existem cinco páginas
+PBIR e modelo TMDL; carregado e salvo no Desktop Store 2.158.1177.0.
+Oito totais e quatro cenários foram executados no DAX e conciliados com Python/SQL:
+[evidência](validation.md). Medidas vigentes em [measures.dax](measures.dax).
+O projeto permite Snapshot/CSV e PostgreSQL via SourceMode; não versiona senha/cache.
+Snapshot CSV já foi executado. Autenticação e refresh direto PostgreSQL são um gate
+separado; consulte o relatório V2 para o estado atual dessa verificação.
+
+As instruções seguintes foram escritas para montagem manual V1 e ficam como contexto;
+para a implementação vigente prevalecem projeto e validação V2.
+
 Esta pasta entrega especificações e medidas; não contém um PBIX fabricado.
 O dashboard ainda precisa ser montado e validado no Power BI Desktop.
 

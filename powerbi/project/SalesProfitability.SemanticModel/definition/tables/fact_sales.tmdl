@@ -1,0 +1,315 @@
+table fact_sales
+	lineageTag: 62e727a4-be73-477c-bc2e-dea7e38c52a6
+
+	/// Contrato V2: Receita Bruta. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Receita Bruta' = SUM(fact_sales[gross_revenue])
+		formatString: "R$" #,0.00; -"R$" #,0.00
+		displayFolder: Executivo
+		lineageTag: 8e59af93-d266-4b37-b4f2-6e834328c775
+
+	/// Contrato V2: Descontos. Dados sintéticos; contribuição não é lucro líquido.
+	measure Descontos = SUM(fact_sales[discount_value])
+		formatString: "R$" #,0.00; -"R$" #,0.00
+		displayFolder: Executivo
+		lineageTag: 7a55e3b9-dd99-4fb7-954a-7c002ea0ea9c
+
+	/// Contrato V2: Devoluções. Dados sintéticos; contribuição não é lucro líquido.
+	measure Devoluções = SUM(fact_sales[return_value])
+		formatString: "R$" #,0.00; -"R$" #,0.00
+		displayFolder: Executivo
+		lineageTag: 1ef38f07-0189-476d-a4ef-ad41a3aa1f51
+
+	/// Contrato V2: Receita Líquida. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Receita Líquida' = SUM(fact_sales[net_revenue])
+		formatString: "R$" #,0.00; -"R$" #,0.00
+		displayFolder: Executivo
+		lineageTag: 175a178a-16e2-4cec-a820-66f96ad58f63
+
+	/// Contrato V2: CMV. Dados sintéticos; contribuição não é lucro líquido.
+	measure CMV = SUM(fact_sales[total_product_cost])
+		formatString: "R$" #,0.00; -"R$" #,0.00
+		displayFolder: Executivo
+		lineageTag: bf93c2a2-0b73-445d-91b1-ff93d0d06a56
+
+	/// Contrato V2: Frete. Dados sintéticos; contribuição não é lucro líquido.
+	measure Frete = SUM(fact_sales[freight_allocated])
+		formatString: "R$" #,0.00; -"R$" #,0.00
+		displayFolder: Executivo
+		lineageTag: ed0cbe64-d686-4631-8275-5fc094b61cc2
+
+	/// Contrato V2: Custos Variáveis. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Custos Variáveis' = SUM(fact_sales[variable_cost_value])
+		formatString: "R$" #,0.00; -"R$" #,0.00
+		displayFolder: Executivo
+		lineageTag: ca8ac044-3e61-4a08-b1a1-26d34543c421
+
+	/// Contrato V2: Margem. Dados sintéticos; contribuição não é lucro líquido.
+	measure Margem = SUM(fact_sales[contribution_margin])
+		formatString: "R$" #,0.00; -"R$" #,0.00
+		displayFolder: Executivo
+		lineageTag: ba54c68d-6b34-4e37-9e07-bf751bc1237e
+
+	/// Contrato V2: Margem %. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Margem %' = DIVIDE([Margem],[Receita Líquida])
+		formatString: 0.00%
+		displayFolder: Executivo
+		lineageTag: 1e14f0d6-f174-4167-a1fa-b5d109cfb0a1
+
+	/// Contrato V2: Pedidos. Dados sintéticos; contribuição não é lucro líquido.
+	measure Pedidos = DISTINCTCOUNT(fact_sales[order_id])
+		formatString: #,0
+		displayFolder: Executivo
+		lineageTag: 36dff9c6-e690-45f3-bebe-de217e451fb7
+
+	/// Contrato V2: Clientes Ativos. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Clientes Ativos' = DISTINCTCOUNT(fact_sales[customer_key])
+		formatString: #,0
+		displayFolder: Executivo
+		lineageTag: 1aa8dc3a-ca67-44ea-b0b9-865e758a1d4e
+
+	/// Contrato V2: Ticket Médio. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Ticket Médio' = DIVIDE([Receita Líquida],[Pedidos])
+		formatString: "R$" #,0.00; -"R$" #,0.00
+		displayFolder: Executivo
+		lineageTag: 9ea2ec3f-9d3e-43d5-9fd2-4bede72925f6
+
+	/// Contrato V2: Desconto Médio %. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Desconto Médio %' = DIVIDE([Descontos],[Receita Bruta])
+		formatString: 0.00%
+		displayFolder: Executivo
+		lineageTag: 4d0a6ada-3d26-43fa-988c-bbd781b0bc9f
+
+	/// Contrato V2: Quantidade Vendida. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Quantidade Vendida' = SUM(fact_sales[quantity])
+		formatString: #,0
+		displayFolder: Executivo
+		lineageTag: ffed859b-028e-412d-bdbb-7cf7a26a7aa7
+
+	/// Contrato V2: Quantidade Devolvida. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Quantidade Devolvida' = SUM(fact_sales[returned_quantity])
+		formatString: #,0
+		displayFolder: Executivo
+		lineageTag: e3dee07c-3515-43e3-9810-eef0f9e3907d
+
+	/// Contrato V2: Taxa de Devolução. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Taxa de Devolução' = DIVIDE([Quantidade Devolvida],[Quantidade Vendida])
+		formatString: "R$" #,0.00; -"R$" #,0.00
+		displayFolder: Executivo
+		lineageTag: fc5144f5-3b63-4bcc-b9b2-c290cc66a9e3
+
+	/// Contrato V2: Desconto Selecionado. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Desconto Selecionado' = SELECTEDVALUE('Desconto Simulado'[Value],0)
+		formatString: 0.00%
+		displayFolder: Simulador
+		lineageTag: 43deb321-46df-4b1e-8ca3-918254744ec6
+
+	/// Contrato V2: Receita Simulada. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Receita Simulada' = SUMX(fact_sales,VAR B=ROUND((fact_sales[quantity]-fact_sales[returned_quantity])*fact_sales[unit_price]*100,0) VAR D=ROUND([Desconto Selecionado]*10000,0) VAR N=QUOTIENT(B*(10000-D)+5000,10000) RETURN CURRENCY(DIVIDE(N,100)))
+		formatString: "R$" #,0.00; -"R$" #,0.00
+		displayFolder: Simulador
+		lineageTag: 64cc296c-5c5b-4215-8032-b9155c341bff
+
+	/// Contrato V2: Custos Variáveis Simulados. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Custos Variáveis Simulados' = SUMX(fact_sales,VAR B=ROUND((fact_sales[quantity]-fact_sales[returned_quantity])*fact_sales[unit_price]*100,0) VAR D=ROUND([Desconto Selecionado]*10000,0) VAR N=QUOTIENT(B*(10000-D)+5000,10000) VAR R=ROUND(fact_sales[variable_cost_rate]*10000,0) VAR V=QUOTIENT(N*R+5000,10000)+ROUND(fact_sales[variable_cost_fixed]*100,0) RETURN CURRENCY(DIVIDE(V,100)))
+		formatString: "R$" #,0.00; -"R$" #,0.00
+		displayFolder: Simulador
+		lineageTag: 989a99b8-7f1c-411e-a734-687402162cb4
+
+	/// Contrato V2: Margem Simulada. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Margem Simulada' = [Receita Simulada]-[CMV]-[Frete]-[Custos Variáveis Simulados]
+		formatString: "R$" #,0.00; -"R$" #,0.00
+		displayFolder: Simulador
+		lineageTag: 43b815f3-96ba-411d-a536-88b74bc879e0
+
+	/// Contrato V2: Margem Simulada %. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Margem Simulada %' = DIVIDE([Margem Simulada],[Receita Simulada])
+		formatString: 0.00%
+		displayFolder: Simulador
+		lineageTag: 4b85051d-bd78-42af-a97c-812f572eb52f
+
+	/// Contrato V2: Impacto na Margem. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Impacto na Margem' = [Margem Simulada]-[Margem]
+		formatString: "R$" #,0.00; -"R$" #,0.00
+		displayFolder: Executivo
+		lineageTag: a2c2fc52-6d86-4606-8e8b-b198d8d6f2c0
+
+	/// Contrato V2: Volume Necessário %. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Volume Necessário %' = IF([Margem Simulada]>0 && [Margem]>0,DIVIDE([Margem],[Margem Simulada])-1,BLANK())
+		formatString: 0.00%
+		displayFolder: Simulador
+		lineageTag: 20c7dac6-fd19-4cf5-9d95-7acaff3fb586
+
+	/// Contrato V2: Base sem Desconto. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Base sem Desconto' = SUMX(fact_sales,(fact_sales[quantity]-fact_sales[returned_quantity])*fact_sales[unit_price])
+		formatString: "R$" #,0.00; -"R$" #,0.00
+		displayFolder: Simulador
+		lineageTag: fe1c930f-dd2d-47db-a64f-edf7e67ded35
+
+	/// Contrato V2: Taxa Variável Ponderada. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Taxa Variável Ponderada' = DIVIDE(SUMX(fact_sales,(fact_sales[quantity]-fact_sales[returned_quantity])*fact_sales[unit_price]*fact_sales[variable_cost_rate]),[Base sem Desconto])
+		formatString: 0.00%
+		displayFolder: Simulador
+		lineageTag: db513616-9afe-496a-99a5-c7b854644389
+
+	/// Contrato V2: Desconto Máximo para Margem 15%. Dados sintéticos; contribuição não é lucro líquido.
+	measure 'Desconto Máximo para Margem 15%' = VAR D=1-[Taxa Variável Ponderada]-0.15 RETURN IF([Base sem Desconto]>0 && D>0,1-DIVIDE([CMV]+[Frete]+SUM(fact_sales[variable_cost_fixed]),[Base sem Desconto]*D),BLANK())
+		formatString: 0.00%
+		displayFolder: Simulador
+		lineageTag: 3d4f9eab-0842-45f2-a486-0d0895bc8d2f
+
+	column sale_key
+		dataType: int64
+		lineageTag: 5c66676b-c4bf-4f96-9207-97ffb5d83ce0
+		summarizeBy: none
+		sourceColumn: sale_key
+
+	column order_id
+		dataType: int64
+		lineageTag: 70bb0721-504a-4024-9312-c6192d0c5555
+		summarizeBy: none
+		sourceColumn: order_id
+
+	column order_item_id
+		dataType: int64
+		lineageTag: ea606acc-4241-43fb-8a99-bee6152ef4cb
+		summarizeBy: none
+		sourceColumn: order_item_id
+
+	column date_key
+		dataType: int64
+		lineageTag: aecce047-61f6-430a-8f3e-2d202947ec34
+		summarizeBy: none
+		sourceColumn: date_key
+
+	column customer_key
+		dataType: int64
+		lineageTag: 910d5382-fb81-4d26-84f6-d04cc95e1a17
+		summarizeBy: none
+		sourceColumn: customer_key
+
+	column product_key
+		dataType: int64
+		lineageTag: 21726823-321b-41af-b0b0-77e3d47238a8
+		summarizeBy: none
+		sourceColumn: product_key
+
+	column channel_key
+		dataType: int64
+		lineageTag: 3b3b3494-7bf1-4be4-99d5-0f2a2c370296
+		summarizeBy: none
+		sourceColumn: channel_key
+
+	column seller_key
+		dataType: int64
+		lineageTag: d11afb12-e4d1-42f3-9d85-703ffa4ae191
+		summarizeBy: none
+		sourceColumn: seller_key
+
+	column quantity
+		dataType: int64
+		lineageTag: e10364d4-e843-4dae-a2dd-b448803f06f3
+		summarizeBy: none
+		sourceColumn: quantity
+
+	column unit_price
+		dataType: decimal
+		lineageTag: 3d07697d-4513-4acc-a50e-9117b8413387
+		summarizeBy: none
+		sourceColumn: unit_price
+
+	column gross_revenue
+		dataType: decimal
+		lineageTag: ef09957f-b1bc-4f53-89ab-58665eae4044
+		summarizeBy: none
+		sourceColumn: gross_revenue
+
+	column discount_percentage
+		dataType: double
+		lineageTag: c97d4f73-39b6-4443-bcd8-4f302958d692
+		summarizeBy: none
+		sourceColumn: discount_percentage
+
+	column discount_value
+		dataType: decimal
+		lineageTag: cb1c67f8-3fad-45c2-8adc-75670869e8e7
+		summarizeBy: none
+		sourceColumn: discount_value
+
+	column net_revenue
+		dataType: decimal
+		lineageTag: 225006fc-f566-4135-81c3-37ffbd2c642d
+		summarizeBy: none
+		sourceColumn: net_revenue
+
+	column unit_cost
+		dataType: decimal
+		lineageTag: 0ba5ccfb-17f4-4d74-860c-8a97a3273bcc
+		summarizeBy: none
+		sourceColumn: unit_cost
+
+	column total_product_cost
+		dataType: decimal
+		lineageTag: 3a5c619a-ec84-4cf6-9bf0-6800e9d6eeb3
+		summarizeBy: none
+		sourceColumn: total_product_cost
+
+	column freight_allocated
+		dataType: decimal
+		lineageTag: 74ef0a74-3fd7-41c5-93d6-77dc0daa9740
+		summarizeBy: none
+		sourceColumn: freight_allocated
+
+	column returned_quantity
+		dataType: int64
+		lineageTag: 37c23a1c-873c-4870-8f3c-55554204d228
+		summarizeBy: none
+		sourceColumn: returned_quantity
+
+	column return_value
+		dataType: decimal
+		lineageTag: d0bcb23f-5ede-4f9a-9436-11622af3d007
+		summarizeBy: none
+		sourceColumn: return_value
+
+	column contribution_margin
+		dataType: decimal
+		lineageTag: 6af38a35-ea18-4a26-993c-50b96552c97d
+		summarizeBy: none
+		sourceColumn: contribution_margin
+
+	column contribution_margin_percentage
+		dataType: double
+		lineageTag: e6a33632-a7dc-4bfe-8d42-28b83b528aa7
+		summarizeBy: none
+		sourceColumn: contribution_margin_percentage
+
+	column variable_cost_rate
+		dataType: double
+		lineageTag: 7832aca8-32d3-4b12-81fc-c7028ecfb2d4
+		summarizeBy: none
+		sourceColumn: variable_cost_rate
+
+	column variable_cost_fixed
+		dataType: decimal
+		lineageTag: fff2ed90-7c03-4884-b0dc-977f2828d422
+		summarizeBy: none
+		sourceColumn: variable_cost_fixed
+
+	column variable_cost_value
+		dataType: decimal
+		lineageTag: 293b59b3-d877-49cb-aff9-54cdc0938b05
+		summarizeBy: none
+		sourceColumn: variable_cost_value
+
+	partition fact_sales = m
+		mode: import
+		source =
+				let
+				    Csv = Csv.Document(File.Contents(DataFolder & "/fact_sales.csv"),[Delimiter=",",Encoding=65001,QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Csv,[PromoteAllScalars=true]),
+				    Snapshot = Table.TransformColumnTypes(Headers,{{"sale_key",Int64.Type},{"order_id",Int64.Type},{"order_item_id",Int64.Type},{"date_key",Int64.Type},{"customer_key",Int64.Type},{"product_key",Int64.Type},{"channel_key",Int64.Type},{"seller_key",Int64.Type},{"quantity",Int64.Type},{"unit_price",Currency.Type},{"gross_revenue",Currency.Type},{"discount_percentage",type number},{"discount_value",Currency.Type},{"net_revenue",Currency.Type},{"unit_cost",Currency.Type},{"total_product_cost",Currency.Type},{"freight_allocated",Currency.Type},{"returned_quantity",Int64.Type},{"return_value",Currency.Type},{"contribution_margin",Currency.Type},{"contribution_margin_percentage",type number},{"variable_cost_rate",type number},{"variable_cost_fixed",Currency.Type},{"variable_cost_value",Currency.Type}},"en-US"),
+				    PostgreSQLSource = PostgreSQL.Database(ServerName,DatabaseName,[CreateNavigationProperties=false]),
+				    SqlTable = PostgreSQLSource{[Schema="analytics",Item="fact_sales"]}[Data],
+				    Result = if SourceMode = "PostgreSQL" then SqlTable else Snapshot
+				in Result
+

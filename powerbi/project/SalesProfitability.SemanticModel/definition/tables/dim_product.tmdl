@@ -1,0 +1,51 @@
+table dim_product
+	lineageTag: 56c0dcd7-0aad-41ef-ab9d-1628ffccf4da
+
+	column product_key
+		dataType: int64
+		lineageTag: 9839bb26-48b5-428e-9aab-a7ecbb38fe8c
+		summarizeBy: none
+		sourceColumn: product_key
+
+	column product_id
+		dataType: int64
+		lineageTag: fa10417c-189f-46e3-bcf9-b9421b3120b7
+		summarizeBy: none
+		sourceColumn: product_id
+
+	column product_name
+		dataType: string
+		lineageTag: 004564b2-36de-43d5-8802-074966cbef70
+		summarizeBy: none
+		sourceColumn: product_name
+
+	column category
+		dataType: string
+		lineageTag: 665faf8e-1d8b-40c7-8196-deb90bee8605
+		summarizeBy: none
+		sourceColumn: category
+
+	column subcategory
+		dataType: string
+		lineageTag: b1a00064-bb39-4333-8b21-9ff244c4cdbf
+		summarizeBy: none
+		sourceColumn: subcategory
+
+	column supplier
+		dataType: string
+		lineageTag: e8f1c7c4-546a-49c4-9988-e7342560463d
+		summarizeBy: none
+		sourceColumn: supplier
+
+	partition dim_product = m
+		mode: import
+		source =
+				let
+				    Csv = Csv.Document(File.Contents(DataFolder & "/dim_product.csv"),[Delimiter=",",Encoding=65001,QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Csv,[PromoteAllScalars=true]),
+				    Snapshot = Table.TransformColumnTypes(Headers,{{"product_key",Int64.Type},{"product_id",Int64.Type},{"product_name",type text},{"category",type text},{"subcategory",type text},{"supplier",type text}},"en-US"),
+				    PostgreSQLSource = PostgreSQL.Database(ServerName,DatabaseName,[CreateNavigationProperties=false]),
+				    SqlTable = PostgreSQLSource{[Schema="analytics",Item="dim_product"]}[Data],
+				    Result = if SourceMode = "PostgreSQL" then SqlTable else Snapshot
+				in Result
+

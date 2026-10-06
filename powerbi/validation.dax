@@ -1,0 +1,13 @@
+EVALUATE
+ROW(
+    "gross_revenue", [Receita Bruta],
+    "discount_value", [Descontos],
+    "return_value", [Devoluções],
+    "net_revenue", [Receita Líquida],
+    "total_product_cost", [CMV],
+    "freight_allocated", [Frete],
+    "variable_cost_value", [Custos Variáveis],
+    "contribution_margin", [Margem],
+    "margin_percentage", [Margem %],
+    "orders", [Pedidos]
+)

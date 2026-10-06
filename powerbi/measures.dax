@@ -1,0 +1,51 @@
+Receita Bruta = SUM(fact_sales[gross_revenue])
+
+Descontos = SUM(fact_sales[discount_value])
+
+Devoluções = SUM(fact_sales[return_value])
+
+Receita Líquida = SUM(fact_sales[net_revenue])
+
+CMV = SUM(fact_sales[total_product_cost])
+
+Frete = SUM(fact_sales[freight_allocated])
+
+Custos Variáveis = SUM(fact_sales[variable_cost_value])
+
+Margem = SUM(fact_sales[contribution_margin])
+
+Margem % = DIVIDE([Margem],[Receita Líquida])
+
+Pedidos = DISTINCTCOUNT(fact_sales[order_id])
+
+Clientes Ativos = DISTINCTCOUNT(fact_sales[customer_key])
+
+Ticket Médio = DIVIDE([Receita Líquida],[Pedidos])
+
+Desconto Médio % = DIVIDE([Descontos],[Receita Bruta])
+
+Quantidade Vendida = SUM(fact_sales[quantity])
+
+Quantidade Devolvida = SUM(fact_sales[returned_quantity])
+
+Taxa de Devolução = DIVIDE([Quantidade Devolvida],[Quantidade Vendida])
+
+Desconto Selecionado = SELECTEDVALUE('Desconto Simulado'[Value],0)
+
+Receita Simulada = SUMX(fact_sales,VAR B=ROUND((fact_sales[quantity]-fact_sales[returned_quantity])*fact_sales[unit_price]*100,0) VAR D=ROUND([Desconto Selecionado]*10000,0) VAR N=QUOTIENT(B*(10000-D)+5000,10000) RETURN CURRENCY(DIVIDE(N,100)))
+
+Custos Variáveis Simulados = SUMX(fact_sales,VAR B=ROUND((fact_sales[quantity]-fact_sales[returned_quantity])*fact_sales[unit_price]*100,0) VAR D=ROUND([Desconto Selecionado]*10000,0) VAR N=QUOTIENT(B*(10000-D)+5000,10000) VAR R=ROUND(fact_sales[variable_cost_rate]*10000,0) VAR V=QUOTIENT(N*R+5000,10000)+ROUND(fact_sales[variable_cost_fixed]*100,0) RETURN CURRENCY(DIVIDE(V,100)))
+
+Margem Simulada = [Receita Simulada]-[CMV]-[Frete]-[Custos Variáveis Simulados]
+
+Margem Simulada % = DIVIDE([Margem Simulada],[Receita Simulada])
+
+Impacto na Margem = [Margem Simulada]-[Margem]
+
+Volume Necessário % = IF([Margem Simulada]>0 && [Margem]>0,DIVIDE([Margem],[Margem Simulada])-1,BLANK())
+
+Base sem Desconto = SUMX(fact_sales,(fact_sales[quantity]-fact_sales[returned_quantity])*fact_sales[unit_price])
+
+Taxa Variável Ponderada = DIVIDE(SUMX(fact_sales,(fact_sales[quantity]-fact_sales[returned_quantity])*fact_sales[unit_price]*fact_sales[variable_cost_rate]),[Base sem Desconto])
+
+Desconto Máximo para Margem 15% = VAR D=1-[Taxa Variável Ponderada]-0.15 RETURN IF([Base sem Desconto]>0 && D>0,1-DIVIDE([CMV]+[Frete]+SUM(fact_sales[variable_cost_fixed]),[Base sem Desconto]*D),BLANK())

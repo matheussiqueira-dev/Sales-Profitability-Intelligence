@@ -1,0 +1,60 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
+  "name": "kpi1",
+  "position": {
+    "x": 334,
+    "y": 22,
+    "width": 294,
+    "height": 120,
+    "z": 0,
+    "tabOrder": 356
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_sales"
+                    }
+                  },
+                  "Property": "Margem Simulada"
+                }
+              },
+              "queryRef": "fact_sales.Margem Simulada",
+              "nativeQueryRef": "Margem Simulada"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Margem Simulada'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

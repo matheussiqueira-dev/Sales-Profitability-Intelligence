@@ -1,5 +1,11 @@
 # Medidas DAX
 
+**V2 vigente:** consultar [measures.dax](measures.dax) e as medidas TMDL do projeto.
+Custos variáveis são somados no histórico e recalculados na receita simulada;
+parâmetro usa CURRENCY e cenários usam centavos/basis points, não Double.
+[Resultados reais no motor](validation.md) coincidem com Python em centavos.
+A descrição V1 abaixo é histórica; suas fórmulas sem custo variável foram supersedidas.
+
 Criar em `fact_sales` ou tabela dedicada de medidas. Sintaxe DAX com vírgulas;
 ajustar separador à configuração regional do Desktop se necessário.
 Formatar dinheiro em BRL, percentuais com 1–2 casas e contagens como inteiros.

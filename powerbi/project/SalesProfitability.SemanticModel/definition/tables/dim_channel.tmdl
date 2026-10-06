@@ -1,0 +1,27 @@
+table dim_channel
+	lineageTag: 4a6df82c-750a-4c3d-a804-d1550e128086
+
+	column channel_key
+		dataType: int64
+		lineageTag: 76616d86-9a71-4f17-8b75-b42428a687ba
+		summarizeBy: none
+		sourceColumn: channel_key
+
+	column channel_name
+		dataType: string
+		lineageTag: 00ad8ec0-d0b5-441e-a175-c526b88551bf
+		summarizeBy: none
+		sourceColumn: channel_name
+
+	partition dim_channel = m
+		mode: import
+		source =
+				let
+				    Csv = Csv.Document(File.Contents(DataFolder & "/dim_channel.csv"),[Delimiter=",",Encoding=65001,QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Csv,[PromoteAllScalars=true]),
+				    Snapshot = Table.TransformColumnTypes(Headers,{{"channel_key",Int64.Type},{"channel_name",type text}},"en-US"),
+				    PostgreSQLSource = PostgreSQL.Database(ServerName,DatabaseName,[CreateNavigationProperties=false]),
+				    SqlTable = PostgreSQLSource{[Schema="analytics",Item="dim_channel"]}[Data],
+				    Result = if SourceMode = "PostgreSQL" then SqlTable else Snapshot
+				in Result
+

@@ -1,0 +1,9 @@
+EVALUATE
+ADDCOLUMNS(
+    FILTER(ALL('Desconto Simulado'), ROUND('Desconto Simulado'[Value],2) IN {0,0.10,0.20,0.30}),
+    "net_revenue", CALCULATE([Receita Simulada]),
+    "variable_cost_value", CALCULATE([Custos Variáveis Simulados]),
+    "margin", CALCULATE([Margem Simulada]),
+    "margin_percentage", CALCULATE([Margem Simulada %]),
+    "maximum_discount", CALCULATE([Desconto Máximo para Margem 15%])
+)

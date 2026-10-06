@@ -1,0 +1,60 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
+  "name": "kpi0",
+  "position": {
+    "x": 24,
+    "y": 22,
+    "width": 294,
+    "height": 120,
+    "z": 0,
+    "tabOrder": 46
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_sales"
+                    }
+                  },
+                  "Property": "Receita Simulada"
+                }
+              },
+              "queryRef": "fact_sales.Receita Simulada",
+              "nativeQueryRef": "Receita Simulada"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Receita Simulada'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

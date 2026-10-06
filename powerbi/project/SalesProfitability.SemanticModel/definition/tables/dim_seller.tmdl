@@ -1,0 +1,39 @@
+table dim_seller
+	lineageTag: bce3de01-e03f-47fb-b4d1-7ee3ad9947fd
+
+	column seller_key
+		dataType: int64
+		lineageTag: 3e80ceed-86c0-439e-828b-ce8487ac7095
+		summarizeBy: none
+		sourceColumn: seller_key
+
+	column seller_id
+		dataType: int64
+		lineageTag: 7d2344c2-ddd1-4c10-b1aa-1b98535799b4
+		summarizeBy: none
+		sourceColumn: seller_id
+
+	column seller_name
+		dataType: string
+		lineageTag: ec5304d2-3c07-4fea-8b29-8511eb18aa1c
+		summarizeBy: none
+		sourceColumn: seller_name
+
+	column region
+		dataType: string
+		lineageTag: fb6a819b-67b9-4b46-be1b-ba735fd3fd34
+		summarizeBy: none
+		sourceColumn: region
+
+	partition dim_seller = m
+		mode: import
+		source =
+				let
+				    Csv = Csv.Document(File.Contents(DataFolder & "/dim_seller.csv"),[Delimiter=",",Encoding=65001,QuoteStyle=QuoteStyle.Csv]),
+				    Headers = Table.PromoteHeaders(Csv,[PromoteAllScalars=true]),
+				    Snapshot = Table.TransformColumnTypes(Headers,{{"seller_key",Int64.Type},{"seller_id",Int64.Type},{"seller_name",type text},{"region",type text}},"en-US"),
+				    PostgreSQLSource = PostgreSQL.Database(ServerName,DatabaseName,[CreateNavigationProperties=false]),
+				    SqlTable = PostgreSQLSource{[Schema="analytics",Item="dim_seller"]}[Data],
+				    Result = if SourceMode = "PostgreSQL" then SqlTable else Snapshot
+				in Result
+

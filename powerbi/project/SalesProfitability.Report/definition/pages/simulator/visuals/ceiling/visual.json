@@ -1,0 +1,60 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
+  "name": "ceiling",
+  "position": {
+    "x": 500,
+    "y": 166,
+    "width": 756,
+    "height": 180,
+    "z": 0,
+    "tabOrder": 666
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_sales"
+                    }
+                  },
+                  "Property": "Desconto Máximo para Margem 15%"
+                }
+              },
+              "queryRef": "fact_sales.Desconto Máximo para Margem 15%",
+              "nativeQueryRef": "Desconto Máximo para Margem 15%"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Desconto máximo para meta de 15%'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

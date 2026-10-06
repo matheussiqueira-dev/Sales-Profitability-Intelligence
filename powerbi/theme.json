@@ -1,0 +1,14 @@
+{
+  "name": "Sales Profitability V2",
+  "dataColors": ["#2463A6", "#08745B", "#BC3941", "#92A8B9"],
+  "background": "#FAFBFC",
+  "foreground": "#17212B",
+  "tableAccent": "#2463A6",
+  "visualStyles": {
+    "*": {"*": {
+      "title": [{"fontSize": 15, "fontColor": {"solid": {"color": "#17212B"}}}],
+      "background": [{"show": true, "color": {"solid": {"color": "#FAFBFC"}}}],
+      "border": [{"show": false}]
+    }}
+  }
+}

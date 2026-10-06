@@ -1,0 +1,13 @@
+table 'Desconto Simulado'
+	lineageTag: 998b0cd5-fbd8-4542-96c5-e231ec34ca26
+
+	column Value
+		dataType: decimal
+		formatString: 0%
+		lineageTag: fada68da-7352-4bb1-9f47-c45f67f45b30
+		summarizeBy: none
+		sourceColumn: [Value]
+
+	partition 'Desconto Simulado' = calculated
+		source = GENERATESERIES(CURRENCY(0),CURRENCY(0.30),CURRENCY(0.01))
+
