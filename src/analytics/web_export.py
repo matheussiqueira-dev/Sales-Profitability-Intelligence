@@ -35,8 +35,10 @@ def export_web_snapshot(tables, completed_at, output=ROOT / "web/public/data"):
         "monthly-profitability": tables["monthly_performance"]
         .sort_values("month")
         .to_dict("records"),
-        "channels": tables["channel_profitability"].to_dict("records"),
-        "products": tables["product_profitability"][product_columns].to_dict("records"),
+        "channels": tables["channel_profitability"].sort_values("channel_key").to_dict("records"),
+        "products": tables["product_profitability"]
+        .sort_values("product_key")[product_columns]
+        .to_dict("records"),
         "customer-segments": segments,
     }
     contents = {

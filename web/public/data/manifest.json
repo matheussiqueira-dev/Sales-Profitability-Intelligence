@@ -3,12 +3,12 @@
   "synthetic": true,
   "reconciled": true,
   "completed_at": "2026-10-06 20:55:48.500572+00:00",
-  "snapshot": "14454a47e6ebbaab",
+  "snapshot": "ff15f8f25127597a",
   "sha256": {
     "executive-summary": "e94caee024f998fa84b26f8546c71e248bb590d7040a593b6e6592fd5b6655f9",
     "monthly-profitability": "7b62eeff7e25d02435b3d8aa4381433575d00b46229ca98303212a466cc516e2",
     "channels": "3f2070c62f21d7fabb0215b63d46713041945062f45409cedd5a1ca04f0a73be",
-    "products": "13ce17717f15c4551fe00ad39c6608bfe17503202a0fb5229a93cfde5e7fd9e9",
+    "products": "a0daedd1caad11c7c3e2b70adb5e2616a5b978e4877d45b959809cdd6e0c3ea8",
     "customer-segments": "87d563bbfca376984807c556b295ec9e1a263627f33d88aa074e15aeb9de57d5"
   },
   "period": {

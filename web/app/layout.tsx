@@ -1,5 +1,45 @@
-import type {Metadata} from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
-export const metadata:Metadata={title:"Sales Profitability Intelligence | Matheus Siqueira",description:"Rentabilidade por margem de contribuição: vendas, descontos, devoluções e custos em um case de Analytics Engineering com dados sintéticos.",robots:{index:false,follow:false},openGraph:{title:"Sales Profitability Intelligence",description:"Da receita à contribuição, com dados conciliados.",type:"website"}};
-export default function Layout({children}:{children:React.ReactNode}){return <html lang="pt-BR"><body><a className="skip-link" href="#content">Ir ao conteúdo</a><header className="site-header"><Link className="brand" href="/">Sales Profitability<span>Intelligence</span></Link><nav aria-label="Navegação principal"><Link href="/#analysis">Análise</Link><Link href="/methodology">Metodologia</Link><a href="https://github.com/matheussiqueira-dev/Sales-Profitability-Intelligence">Repositório</a></nav></header>{children}<footer><span>Matheus Siqueira · Analytics Engineering</span><a href="https://www.matheussiqueira.dev">Conhecer o portfólio</a><span>Dados fictícios. Contribuição não representa lucro líquido.</span></footer></body></html>}
+export const metadata: Metadata = {
+  title: "Sales Profitability Intelligence | Matheus Siqueira",
+  description:
+    "Rentabilidade por margem de contribuição: vendas, descontos, devoluções e custos em um case de Analytics Engineering com dados sintéticos.",
+  robots: { index: false, follow: false },
+  openGraph: {
+    title: "Sales Profitability Intelligence",
+    description: "Da receita à contribuição, com dados conciliados.",
+    type: "website",
+  },
+};
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="pt-BR">
+      <body>
+        <a className="skip-link" href="#content">
+          Ir ao conteúdo
+        </a>
+        <header className="site-header">
+          <Link className="brand" href="/">
+            Sales Profitability<span>Intelligence</span>
+          </Link>
+          <nav aria-label="Navegação principal">
+            <Link href="/#analysis">Análise</Link>
+            <Link href="/methodology">Metodologia</Link>
+            <a href="https://github.com/matheussiqueira-dev/Sales-Profitability-Intelligence">
+              Repositório
+            </a>
+          </nav>
+        </header>
+        {children}
+        <footer>
+          <span>Matheus Siqueira · Analytics Engineering</span>
+          <a href="https://www.matheussiqueira.dev">Conhecer o portfólio</a>
+          <span>
+            Dados fictícios. Contribuição não representa lucro líquido.
+          </span>
+        </footer>
+      </body>
+    </html>
+  );
+}

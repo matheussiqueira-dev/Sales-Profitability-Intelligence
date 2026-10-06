@@ -18,6 +18,8 @@ jobs:
       - run: pip install -r requirements.lock.txt
       - run: ruff check . && ruff format --check .
       - run: pytest -m 'not integration' -v
+      - run: python scripts/generate_source_ddl.py --check
+      - run: python scripts/generate_mock_data.py --orders 80 --customers 20 --products 20 --output artifacts/generator-smoke
   integration:
     runs-on: ubuntu-latest
     # Ephemeral CI-only credential, supplied through environment; never a real account secret.
@@ -46,3 +48,31 @@ jobs:
           python-version: '3.13'
       - run: pip install -r requirements.lock.txt
       - run: pytest --cov=src --cov-report=term-missing -v
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint && npm run typecheck && npm run build
+      - run: npm audit --omit=dev
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+  powerbi-artifacts:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install -r requirements.lock.txt
+      - run: python scripts/verify_powerbi.py
+      - run: ./scripts/setup_powerbi_tools.ps1
+      - run: ./scripts/verify_tmdl.ps1

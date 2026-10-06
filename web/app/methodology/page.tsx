@@ -1,1 +1,91 @@
-export default function Methodology(){return <main id="content" className="methodology"><h1>Como a rentabilidade é calculada</h1><p className="lead">Este case usa dados sintéticos. Cada valor monetário foi calculado em centavos e conciliado no PostgreSQL antes da exportação.</p><h2>Margem de contribuição</h2><p>Receita líquida − CMV das unidades retidas − frete real − taxas e embalagem. Impostos, custos fixos e CAC não estão incluídos; o resultado não é lucro líquido.</p><h2>Contrato V2</h2><p>Taxas de pagamento, canal e comissão incidem sobre a receita líquida. A embalagem é um custo por item e permanece em devoluções. Essas taxas são hipóteses sintéticas, sem pretensão de representar preços de mercado.</p><table><thead><tr><th>Canal</th><th>Pagamento</th><th>Canal</th><th>Comissão</th></tr></thead><tbody><tr><td>Loja Física</td><td>1,0%</td><td>0%</td><td>2,0%</td></tr><tr><td>E-commerce</td><td>3,2%</td><td>0%</td><td>0,5%</td></tr><tr><td>Marketplace</td><td>3,5%</td><td>14,5%</td><td>0,5%</td></tr><tr><td>Venda Direta</td><td>1,5%</td><td>0%</td><td>2,0%</td></tr></tbody></table><h2>Devolução e frete</h2><p>Devoluções são atribuídas ao período da venda. O reembolso é proporcional ao valor descontado, e o CMV devolvido é recuperado. O frete permanece como custo e é distribuído por receita líquida; quando ela é zero, pela quantidade original.</p><h2>Simulação e limite de desconto</h2><p>Desconto uniforme substitui o desconto histórico e recalcula taxas sobre a nova receita. Quantidades retidas, mix e custos por volume ficam constantes. Para base B, custos C, taxa r e meta m, o teto analítico é 1 − C / (B × (1 − r − m)). A taxa agregada é ponderada pela base sem desconto; cenários são conferidos em centavos.</p><p>O crescimento compensatório de volume é um cenário matemático. Não modela demanda, elasticidade, capacidade ou estoque.</p><h2>Limites e reprodução</h2><p>Os gráficos leem cinco JSONs agregados identificados por hash. A aplicação não recebe senha de banco ou dados transacionais de clientes. O motor Power BI, sua conexão e testes visuais são verificados separadamente do build web.</p><a className="button" href="https://github.com/matheussiqueira-dev/Sales-Profitability-Intelligence">Consultar código e instruções</a></main>}
+export default function Methodology() {
+  return (
+    <main id="content" className="methodology">
+      <h1>Como a rentabilidade é calculada</h1>
+      <p className="lead">
+        Este case usa dados sintéticos. Cada valor monetário foi calculado em
+        centavos e conciliado no PostgreSQL antes da exportação.
+      </p>
+      <h2>Margem de contribuição</h2>
+      <p>
+        Receita líquida − CMV das unidades retidas − frete real − taxas e
+        embalagem. Impostos, custos fixos e CAC não estão incluídos; o resultado
+        não é lucro líquido.
+      </p>
+      <h2>Contrato V2</h2>
+      <p>
+        Taxas de pagamento, canal e comissão incidem sobre a receita líquida. A
+        embalagem é um custo por item e permanece em devoluções. Essas taxas são
+        hipóteses sintéticas, sem pretensão de representar preços de mercado.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Canal</th>
+            <th>Pagamento</th>
+            <th>Canal</th>
+            <th>Comissão</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Loja Física</td>
+            <td>1,0%</td>
+            <td>0%</td>
+            <td>2,0%</td>
+          </tr>
+          <tr>
+            <td>E-commerce</td>
+            <td>3,2%</td>
+            <td>0%</td>
+            <td>0,5%</td>
+          </tr>
+          <tr>
+            <td>Marketplace</td>
+            <td>3,5%</td>
+            <td>14,5%</td>
+            <td>0,5%</td>
+          </tr>
+          <tr>
+            <td>Venda Direta</td>
+            <td>1,5%</td>
+            <td>0%</td>
+            <td>2,0%</td>
+          </tr>
+        </tbody>
+      </table>
+      <h2>Devolução e frete</h2>
+      <p>
+        Devoluções são atribuídas ao período da venda. O reembolso é
+        proporcional ao valor descontado, e o CMV devolvido é recuperado. O
+        frete permanece como custo e é distribuído por receita líquida; quando
+        ela é zero, pela quantidade original.
+      </p>
+      <h2>Simulação e limite de desconto</h2>
+      <p>
+        Desconto uniforme substitui o desconto histórico e recalcula taxas sobre
+        a nova receita. Quantidades retidas, mix e custos por volume ficam
+        constantes. Para base B, custos C, taxa r e meta m, o teto analítico é 1
+        − C / (B × (1 − r − m)). A taxa agregada é ponderada pela base sem
+        desconto; cenários são conferidos em centavos.
+      </p>
+      <p>
+        O crescimento compensatório de volume é um cenário matemático. Não
+        modela demanda, elasticidade, capacidade ou estoque.
+      </p>
+      <h2>Limites e reprodução</h2>
+      <p>
+        Os gráficos leem cinco JSONs agregados identificados por hash. A
+        aplicação não recebe senha de banco ou dados transacionais de clientes.
+        O motor Power BI, sua conexão e testes visuais são verificados
+        separadamente do build web.
+      </p>
+      <a
+        className="button"
+        href="https://github.com/matheussiqueira-dev/Sales-Profitability-Intelligence"
+      >
+        Consultar código e instruções
+      </a>
+    </main>
+  );
+}
