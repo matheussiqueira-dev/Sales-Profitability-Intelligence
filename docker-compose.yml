@@ -1,7 +1,7 @@
 name: sales-profitability-intelligence
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-sales_profitability}
       POSTGRES_USER: ${POSTGRES_USER:-sales_app}
@@ -16,7 +16,7 @@ services:
       timeout: 5s
       retries: 15
   pgadmin:
-    image: dpage/pgadmin4:9
+    image: dpage/pgadmin4:9@sha256:c332c5f6dfba995d9ebc4af261d93506d6876085d712eaaa3defc8dd1a3f26de
     profiles: ["tools"]
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
