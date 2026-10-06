@@ -1,5 +1,34 @@
 # Executar do zero no Windows / PowerShell
 
+## V2: projeto existente e camadas visíveis
+
+Antes de atualizar um dataset V1 já gerado, preserve backup e execute na raiz:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.lock.txt
+.\.venv\Scripts\python.exe scripts/upgrade_sources.py
+.\.venv\Scripts\python.exe -m src.pipeline
+```
+
+upgrade_sources adiciona somente variable_costs.csv se ausente, sem reescrever os
+sete CSVs antigos. As taxas são hipóteses sintéticas documentadas; não usar o script
+para inventar custos de uma operação real. O pipeline migra schema próprio V1→V2
+transacionalmente e reconcilia oito totais. Migração isolada:
+`python scripts/initialize_database.py` preserva valores antigos com custo legado zero;
+isso não substitui a carga da nova fonte nem evidencia custos reais nulos.
+
+Power BI: abrir `powerbi/project/SalesProfitability.pbip`, configurar DataFolder para
+a pasta absoluta data/processed deste clone, atualizar e conferir validation.md.
+Modo Snapshot usa CSVs conciliados. Para conexão direta, SourceMode=PostgreSQL;
+ServerName=127.0.0.1:5432 e DatabaseName do `.env`; credenciais no Desktop.
+Cache/configurações locais .pbi são ignoradas. Não enviar senha no chat ou versionar.
+
+Web: [execução](../web/README.md), http://127.0.0.1:3000.
+Exportar novamente: `python scripts/export_web.py` (refaz reconciliação antes de publicar
+agregados locais). Alterações requerem novo build web para renovar páginas estáticas.
+
+O fluxo manual abaixo continua válido para um clone novo, gerando oito fontes V2.
+
 Pré-requisitos: Git, Python 3.12+ (3.13 validado localmente), Docker Desktop iniciado.
 Execute os comandos na raiz do repositório, nunca dentro de src.
 

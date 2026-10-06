@@ -1,5 +1,31 @@
 # Arquitetura
 
+## V2 vigente
+
+Fonte adicional variable_costs, contratos declarativos Pandera sem coerção Decimal,
+DDL físico raw/staging em SQL e migração transacional 002. A contribuição inclui
+taxas sobre receita líquida e embalagem por item não cancelado.
+Snapshot full-refresh e advisory lock foram preservados; oito totais reconciliados.
+Schema migration registra versão 2 e zero legado é explicitamente custo não modelado.
+
+```mermaid
+flowchart LR
+  CSV[8 CSVs sintéticos] --> Q[Pandera e regras relacionais]
+  Q --> P[Python e Decimal]
+  P --> DB[(raw / staging / analytics)]
+  DB --> R[Reconciliação Python e SQL]
+  R --> COMMIT[Commit]
+  COMMIT --> PBI[Power BI PBIP / TMDL / PBIR]
+  COMMIT --> SNAP[JSON agregado e manifest por hash]
+  SNAP --> WEB[Next.js / Tailwind / Recharts]
+```
+
+Power BI aberto/carregado/salvo e DAX executado; paridade documentada em validation.md.
+O modo snapshot é independente da autenticação da conexão PostgreSQL direta.
+Web recebe somente agregados e valida hashes; não recebe conexão/credenciais nem
+clientes individualizados. Export só é publicado depois do commit conciliado.
+Detalhes: ADRs 003–005. A descrição a seguir preserva decisões V1 e suas limitações.
+
 Decisão comercial: receita pode crescer sem rentabilidade; derivar contribuição
 em dados transacionais e manter rastreabilidade até os CSVs de origem.
 

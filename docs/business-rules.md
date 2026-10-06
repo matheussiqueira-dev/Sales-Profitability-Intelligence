@@ -1,5 +1,31 @@
 # Contrato financeiro
 
+## Evolução V2 (vigente)
+
+A V2 adiciona uma fonte `variable_costs.csv`, exatamente uma linha por item:
+payment_fee_rate, channel_fee_rate, commission_rate e packaging_cost.
+Taxas são frações sintéticas; soma deve ficar em [0,1). Valor variável =
+HALF_UP(receita líquida × soma das taxas + embalagem, 2).
+Contribuição V2 = líquida − CMV − frete − valor variável.
+Embalagem é por item não cancelado e não é estornada na devolução.
+Taxas sintéticas por canal estão na metodologia web; não são benchmarks de mercado.
+Impostos, custos fixos, CAC e perdas não recuperáveis continuam fora do escopo.
+
+Simulador V2 recalcula taxas sobre receita simulada e mantém embalagem por item.
+Teto: `1 - C/(B*(1-r-m))`, C=CMV+frete+embalagem, B=base retida sem desconto,
+r ponderado por essa base (não pela receita descontada), m=meta. Se 1-r-m<=0,
+não há solução positiva. SQL expõe função parametrizada analytics.discount_limit.
+Fórmula é analítica antes de arredondar; decisão final consulta simulação em centavos.
+DAX vigente e execução real: [measures.dax](../powerbi/measures.dax),
+[paridade](../powerbi/validation.md). O parâmetro usa Currency e os cenários usam
+centavos/basis points para evitar deriva Double. A seção abaixo registra a base V1;
+onde excluir custos variáveis, a fórmula foi supersedida por este contrato V2.
+
+Pandera verifica declarativamente o dado normalizado sem coagir Decimal para float;
+o parser exato e as validações relacionais foram preservados. Nenhuma margem vem no raw.
+
+## Base financeira V1 (histórico)
+
 Grão: um item de pedido não cancelado. Cancelados permanecem em raw/staging,
 mas não entram nos KPIs. Quantidade inclui unidades devolvidas; quantidade retida
 é vendida menos devolvida. Vendas integralmente devolvidas permanecem na fato,

@@ -45,6 +45,11 @@ Veja business-rules.md para arredondamento, frete, simulador e limitações.
 | raw.targets | channel | VARCHAR | PK; NOT NULL; Um dos quatro canais permitidos | Loja Física |
 | raw.targets | revenue_target | VARCHAR | NOT NULL; Meta monetária sintética mensal/canal | 500000.00 |
 | raw.targets | margin_target_percentage | VARCHAR | NOT NULL; Meta de margem sintética como fração | 0.20 |
+| raw.variable_costs | order_item_id | TEXT | PK; NOT NULL; ID único do item; grão da fato | 1 |
+| raw.variable_costs | payment_fee_rate | TEXT | NOT NULL; Taxa sintética de pagamento, fração | .0100 |
+| raw.variable_costs | channel_fee_rate | TEXT | NOT NULL; Taxa sintética do canal, fração | .0000 |
+| raw.variable_costs | commission_rate | TEXT | NOT NULL; Comissão sintética, fração | .0200 |
+| raw.variable_costs | packaging_cost | TEXT | NOT NULL; Embalagem por item, centavos | 3.17 |
 | staging.customers | customer_id | INTEGER | PK; NOT NULL; ID natural do cliente sintético | 1 |
 | staging.customers | customer_name | VARCHAR | NOT NULL; Nome fictício; não representa pessoa/empresa real | Cliente Sintético 0001 |
 | staging.customers | customer_type | VARCHAR | NOT NULL; B2B ou B2C | B2B |
@@ -84,6 +89,11 @@ Veja business-rules.md para arredondamento, frete, simulador e limitações.
 | staging.targets | channel | VARCHAR | PK; NOT NULL; Um dos quatro canais permitidos | Loja Física |
 | staging.targets | revenue_target | NUMERIC(18, 2) | NOT NULL; Meta monetária sintética mensal/canal | 500000.00 |
 | staging.targets | margin_target_percentage | NUMERIC(8, 4) | NOT NULL; Meta de margem sintética como fração | 0.2000 |
+| staging.variable_costs | order_item_id | INTEGER | PK; NOT NULL; ID único do item; grão da fato | 1 |
+| staging.variable_costs | payment_fee_rate | NUMERIC(8, 4) | NOT NULL; Taxa sintética de pagamento, fração | 0.0100 |
+| staging.variable_costs | channel_fee_rate | NUMERIC(8, 4) | NOT NULL; Taxa sintética do canal, fração | 0.0000 |
+| staging.variable_costs | commission_rate | NUMERIC(8, 4) | NOT NULL; Comissão sintética, fração | 0.0200 |
+| staging.variable_costs | packaging_cost | NUMERIC(18, 2) | NOT NULL; Embalagem por item, centavos | 3.17 |
 | analytics.dim_channel | channel_key | INTEGER | PK; NOT NULL; PK/FK do canal, 1–4 | 1 |
 | analytics.dim_channel | channel_name | TEXT | NOT NULL; Nome único do canal | Loja Física |
 | analytics.dim_customer | customer_key | INTEGER | PK; NOT NULL; PK/FK estável do cliente | 1 |
@@ -132,9 +142,14 @@ Veja business-rules.md para arredondamento, frete, simulador e limitações.
 | analytics.fact_sales | freight_allocated | NUMERIC(18, 2) | NOT NULL; Frete real rateado por receita; fallback quantidade | 29.30 |
 | analytics.fact_sales | returned_quantity | INTEGER | NOT NULL; Soma de unidades devolvidas do item, 0 até quantity | 0 |
 | analytics.fact_sales | return_value | NUMERIC(18, 2) | NOT NULL; Reembolso proporcional à receita descontada arredondada | 0.00 |
-| analytics.fact_sales | contribution_margin | NUMERIC(18, 2) | NOT NULL; Líquida − CMV − frete; pode ser negativa | 139.30 |
-| analytics.fact_sales | contribution_margin_percentage | NUMERIC(20, 10) | NULL permitido; Contribuição / líquida; NULL quando líquida zero | 0.1239246666 |
+| analytics.fact_sales | contribution_margin | NUMERIC(18, 2) | NOT NULL; Líquida − CMV − frete; pode ser negativa | 102.41 |
+| analytics.fact_sales | contribution_margin_percentage | NUMERIC(20, 10) | NULL permitido; Contribuição / líquida; NULL quando líquida zero | 0.0911064258 |
+| analytics.fact_sales | variable_cost_rate | NUMERIC(8, 4) | NOT NULL; Soma das taxas sintéticas sobre receita líquida, [0,1) | 0.0300 |
+| analytics.fact_sales | variable_cost_fixed | NUMERIC(18, 2) | NOT NULL; Embalagem por item, não estornada nas devoluções | 3.17 |
+| analytics.fact_sales | variable_cost_value | NUMERIC(18, 2) | NOT NULL; HALF_UP(líquida × taxa + embalagem), centavos | 36.89 |
 | analytics.pipeline_metadata | singleton | BOOLEAN | PK; NOT NULL; Uma única linha true | True |
 | analytics.pipeline_metadata | owner | TEXT | NOT NULL; Marker de posse do warehouse | sales-profitability-intelligence |
-| analytics.pipeline_metadata | contract_version | INTEGER | NOT NULL; Versão 1 do contrato; mudanças exigem migração | 1 |
+| analytics.pipeline_metadata | contract_version | INTEGER | NOT NULL; Versão 1 do contrato; mudanças exigem migração | 2 |
 | analytics.pipeline_metadata | completed_at | TIMESTAMP | NULL permitido; Timestamp do último snapshot commitado, timezone PostgreSQL | timestamp do snapshot (variável) |
+| analytics.schema_migrations | version | INTEGER | PK; NOT NULL; Versão da migração SQL aplicada | 2 |
+| analytics.schema_migrations | applied_at | TIMESTAMP | NOT NULL; Timestamp de aplicação da migração | 2026-10-06 20:27:14.665061+00:00 |
