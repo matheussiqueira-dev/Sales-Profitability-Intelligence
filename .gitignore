@@ -1,0 +1,13 @@
+.venv/
+.env
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.pyc
+*.egg-info/
+data/raw/*.csv
+data/processed/*
+!data/processed/README.md
+artifacts/
