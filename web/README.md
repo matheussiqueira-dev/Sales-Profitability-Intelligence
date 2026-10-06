@@ -23,8 +23,10 @@ erros de página e overflow; screenshots locais em artifacts/web.
 Metodologia em /methodology. O aviso de dados fictícios permanece no produto.
 Metadata/OG estão configurados; robots=noindex enquanto a publicação for preview.
 Domínio, canonical público e indexação devem ser ajustados no release com URL real.
-O link ao repositório privado requer acesso; o site não promete conteúdo público
-que ainda não foi publicado. Deploy externo não foi executado nesta etapa.
+O link ao repositório privado requer acesso. Deploy de produção executado em
+06/10/2026: https://inteligence-bi-tau.vercel.app. O noindex permanece como decisão
+de indexação da vitrine; publicação e indexação são independentes.
+Evidências de CI e verificação remota: [registro de publicação](../docs/web-release.md).
 
 `npm audit --omit=dev` passou sem vulnerabilidades runtime. Audit completo reportou
 cinco high transitivos nas ferramentas ESLint/fast-glob/micromatch/braces, incluindo

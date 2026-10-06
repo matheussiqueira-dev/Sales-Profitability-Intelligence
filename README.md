@@ -25,7 +25,10 @@ Web: Next.js/TypeScript/Tailwind/Recharts, JSONs agregados com hashes, sem crede
 Qualidade V2: Pandera sem coerção monetária para float + validações relacionais;
 DDL raw/staging explícito, migração V1→V2, CHECKs financeiros, lock, rollback e
 reconciliação. **69 testes passaram, cobertura 92%**. CI foi expandida para smoke do
-gerador, drift de DDL, web e artefatos Power BI; execução remota V2 ainda depende de push.
+gerador, drift de DDL, web e artefatos Power BI; os cinco jobs da
+[CI remota V2](https://github.com/matheussiqueira-dev/Sales-Profitability-Intelligence/actions/runs/37532672986)
+passaram. [Aplicação na Vercel](https://inteligence-bi-tau.vercel.app) ·
+[Registro de publicação](docs/web-release.md).
 
 Atualizar V1: `python scripts/upgrade_sources.py` adiciona somente a fonte de custos;
 depois `python -m src.pipeline`. Para clone novo, bootstrap gera oito fontes.

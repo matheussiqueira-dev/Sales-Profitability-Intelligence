@@ -22,7 +22,7 @@ Repositório verificado como PRIVATE; não foi alterada a visibilidade.
 | Integridade pública | cinco JSONs agregados por hash; nenhum segredo ou cliente individual |
 | UI web | screenshots reais desktop/mobile; navegação/filtro/sem overflow conferidos |
 | Audit runtime web | npm audit --omit=dev: zero; full audit com cinco high só em tooling |
-| CI V2 | jobs adicionados, execução remota pendente de publicação dos novos commits |
+| CI V2 | cinco jobs remotos aprovados; ver registro de publicação web |
 
 Base: 2.000 clientes, 200 produtos, 40.000 pedidos, 101.772 itens, 4.366 devoluções,
 40.000 fretes, 96 metas e 101.772 contratos de custo. Fato: 99.235 itens / 39.002 pedidos.
@@ -48,7 +48,9 @@ plano de execução adaptado, guia web, projeto PBIP/TMDL/PBIR e validation.md.
   isso não é apresentado como validação exata da revisão indisponível.
 - Full npm audit detecta vulnerabilidade transitiva sem patch publicado em braces
   de ferramentas dev. Runtime está limpo. Não aplicado downgrade incompatível.
-- Push V2, CI remota V2, deploy web/Power BI e abertura de visibilidade não executados.
+- Push V2, CI remota V2 e deploy web foram concluídos posteriormente conforme
+  [registro de publicação](web-release.md). Publicação no Power BI Service e
+  abertura de visibilidade do repositório não executadas.
 
 Não se considera release pública concluída com esses gates abertos. Nenhum PBIX,
 imagem de Power BI ou resultado de teste foi fabricado. Para retomar: concluir
