@@ -8,16 +8,17 @@ from sqlalchemy import inspect, text
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.analytics.insights import read_analytics  # noqa: E402
+from src.analytics.publication import save_json  # noqa: E402
 from src.config.settings import Settings  # noqa: E402
 from src.database.connection import engine_for  # noqa: E402
 from src.database.loader import read_statements  # noqa: E402
-from src.pipeline import save_json  # noqa: E402
 
 
 def verify(settings):
     engine = engine_for(settings)
     try:
-        with engine.connect() as connection:
+        with engine.connect().execution_options(isolation_level="REPEATABLE READ") as connection:
+            connection.execute(text("SET TRANSACTION READ ONLY"))
             inspector = inspect(connection)
             counts = {}
             for schema in ("raw", "staging", "analytics"):
