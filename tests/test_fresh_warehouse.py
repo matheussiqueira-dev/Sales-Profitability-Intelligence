@@ -1,9 +1,7 @@
 import os
 from dataclasses import replace
 
-import psycopg
 import pytest
-from psycopg import sql
 from sqlalchemy import inspect, text
 
 from scripts.generate_mock_data import generate, write_dataset
@@ -16,6 +14,9 @@ from src.pipeline import run
 def test_fresh_database_from_versioned_ddl(tmp_path):
     if os.getenv("RUN_DB_TESTS") != "1":
         pytest.skip("Isolated PostgreSQL required")
+    import psycopg
+    from psycopg import sql
+
     settings = Settings.from_env()
     assert settings.database.endswith("_test")
     name = "sales_profitability_fresh_test"

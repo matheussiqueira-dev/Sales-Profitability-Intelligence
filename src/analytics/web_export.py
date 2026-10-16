@@ -53,6 +53,8 @@ def export_web_snapshot(tables, completed_at, output=ROOT / "web/public/data"):
     folder.mkdir(parents=True, exist_ok=True)
     for name, content in contents.items():
         (folder / f"{name}.json").write_text(content, encoding="utf-8")
+    # Period comes from the reconciled months, never from hard-coded dataset dates.
+    months = tables["monthly_performance"].month
     manifest = {
         "contract_version": 2,
         "synthetic": True,
@@ -60,11 +62,8 @@ def export_web_snapshot(tables, completed_at, output=ROOT / "web/public/data"):
         "completed_at": str(completed_at),
         "snapshot": snapshot,
         "sha256": hashes,
-        "period": {"from": "2024-01-01", "to": "2025-12-31"},
+        "period": {"from": str(months.min()), "through_month": str(months.max())},
     }
-    # Determine period from actual months, instead of inventing dataset dates.
-    months = tables["monthly_performance"].month
-    manifest["period"] = {"from": str(months.min()), "through_month": str(months.max())}
     temporary = Path(output) / "manifest.tmp"
     temporary.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     temporary.replace(Path(output) / "manifest.json")

@@ -1,19 +1,17 @@
 """Run a validated atomic full-refresh snapshot from CSV to PostgreSQL."""
 
 import argparse
-import hashlib
-import json
 import logging
-from pathlib import Path
 
 from sqlalchemy import text
 
-from src.analytics.insights import generate_insights, read_analytics
-from src.analytics.web_export import export_web_snapshot
+from src.analytics.insights import read_analytics
+from src.analytics.publication import PublicationError, publish_snapshot, save_json
 from src.config.settings import Settings
 from src.database.connection import engine_for
+from src.database.lease import warehouse_lease
 from src.database.loader import initialize, load_snapshot, read_fact
-from src.ingestion.csv_sources import read_sources
+from src.ingestion.csv_sources import read_sources_with_hashes
 from src.transformation.dimensions import build_dimensions
 from src.transformation.sales import build_fact
 from src.validation.quality import QualityError, validate_sources
@@ -22,27 +20,16 @@ from src.validation.reconciliation import reconcile, reconcile_sql
 LOG = logging.getLogger(__name__)
 
 
-def save_json(path: Path, value):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(
-        json.dumps(value, indent=2, ensure_ascii=False, default=str), encoding="utf-8"
-    )
-    temporary.replace(path)
-
-
 def run(settings, validate_only=False):
     LOG.info("Pipeline started")
-    original = read_sources(settings.raw_path)
+    original, source_hashes = read_sources_with_hashes(settings.raw_path)
     try:
         cleaned, quality = validate_sources(original)
     except QualityError as exc:
+        exc.report["source_sha256"] = source_hashes
         save_json(settings.processed_path / "quality-report.json", exc.report)
         raise
-    quality["source_sha256"] = {
-        path.name: hashlib.sha256(path.read_bytes()).hexdigest()
-        for path in sorted(settings.raw_path.glob("*.csv"))
-    }
+    quality["source_sha256"] = source_hashes
     save_json(settings.processed_path / "quality-report.json", quality)
     LOG.info("Source quality passed")
     if validate_only:
@@ -52,40 +39,30 @@ def run(settings, validate_only=False):
     LOG.info("Built %s non-cancelled sale items", len(fact))
     engine = engine_for(settings)
     try:
-        with engine.begin() as connection:
-            locked = connection.execute(
-                text("SELECT pg_try_advisory_xact_lock(831024915)")
-            ).scalar_one()
-            if not locked:
-                raise RuntimeError("Another pipeline is loading this database")
-            initialize(connection)
-            LOG.info("Loading owned raw, staging and analytics tables atomically")
-            load_snapshot(connection, original, cleaned, dimensions, fact)
-            persisted = read_fact(connection)
-            report = reconcile_sql(connection, reconcile(cleaned, persisted))
-            save_json(settings.processed_path / "reconciliation.json", report)
-            if not report["passed"]:
-                raise ValueError("Financial reconciliation failed; transaction rolled back")
-            tables = read_analytics(connection)
-            insights = generate_insights(tables)
-            connection.execute(
-                text("UPDATE analytics.pipeline_metadata SET completed_at = current_timestamp")
+        with warehouse_lease(engine) as connection:
+            with connection.begin():
+                initialize(connection)
+                LOG.info("Loading owned raw, staging and analytics tables atomically")
+                load_snapshot(connection, original, cleaned, dimensions, fact)
+                persisted = read_fact(connection)
+                report = reconcile_sql(connection, reconcile(cleaned, persisted))
+                save_json(settings.processed_path / "reconciliation.json", report)
+                if not report["passed"]:
+                    raise ValueError("Financial reconciliation failed; transaction rolled back")
+                tables = read_analytics(connection)
+                connection.execute(
+                    text("UPDATE analytics.pipeline_metadata SET completed_at = clock_timestamp()")
+                )
+                completed_at = connection.execute(
+                    text("SELECT completed_at FROM analytics.pipeline_metadata")
+                ).scalar_one()
+            publication = publish_snapshot(
+                settings, dimensions, persisted, tables, report, completed_at
             )
-            completed_at = connection.execute(
-                text("SELECT completed_at FROM analytics.pipeline_metadata")
-            ).scalar_one()
-        # Publish successful exports only after PostgreSQL has committed.
-        save_json(settings.processed_path / "insights.json", insights)
-        for name, frame in {**dimensions, "fact_sales": persisted, **tables}.items():
-            frame.to_csv(settings.processed_path / f"{name}.csv", index=False)
-        # Test runs stay isolated; explicitly call the exporter in tests using a temporary path.
-        if not settings.database.endswith("_test"):
-            export_web_snapshot(tables, completed_at)
         LOG.info("Reconciliation passed for all metrics, rows and order freight")
         LOG.info(
-            "%s deterministic rules evaluated; %s alerts",
-            len(insights["rules_evaluated"]),
-            insights["alerts_count"],
+            "%s deterministic alerts published",
+            publication["alerts_count"],
         )
         LOG.info("Pipeline completed successfully")
         return report
@@ -100,6 +77,9 @@ def main():
     logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
     try:
         run(Settings.from_env(), args.validate_only)
+    except PublicationError as exc:
+        LOG.error("%s", exc)
+        raise SystemExit(2) from None
     except Exception as exc:
         # Avoid DSNs/SQL parameters in terminal logs; quality details live in report.
         LOG.error(
