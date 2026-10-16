@@ -1,0 +1,54 @@
+Create ONE polished editorial business-model infographic in Brazilian Portuguese, landscape 2400 x 1600. This is an explanatory portfolio artifact, not a website UI, not a dashboard screenshot. Use attached screenshot only as visual identity reference: paper #FAFBFC, ink #17212B, muted #526271, dividers #DDE4EA; Source Serif 4-style headings and Source Sans 3-style body. Grayscale editorial canvas, no decorative gradients, illustrations or stock photos. Large legible text, generous whitespace, orderly alignment. Put all nine Business Model Canvas blocks on a single page in a clear conventional 5-column structure: left partners full height; adjacent activities above resources; central value proposition full height; next relationship above channels; right customer segments full height; cost and revenue blocks as two wide bottom cells. Make value proposition column wider if necessary for legibility. Use subtle lines, no shadows or card pile. Exact business content below; do not invent clients, monetary figures or outcome claims. Show a clear top eyebrow CASE DE PORTFÓLIO · MODELO PROPOSTO, title Sales Profitability Intelligence, subtitle Vender mais. Contribuir quanto? and framing sentence Análise de margem para decisões sobre descontos, produtos e canais. Nine blocks with the following exact text:
+PARCEIROS PRINCIPAIS
+Consultorias de ERP e BI
+Especialistas financeiros
+Infraestrutura e licenciamento
+Parcerias ainda não estabelecidas
+
+ATIVIDADES PRINCIPAIS
+Validar e conciliar dados
+Modelar a contribuição
+Simular descontos
+Explicar decisões
+
+RECURSOS PRINCIPAIS
+Python e PostgreSQL
+Power BI e vitrine web
+Regras financeiras documentadas
+
+PROPOSTA DE VALOR
+Entender quanto das vendas permanece como margem de contribuição.
+Comparar produtos, clientes e canais.
+Avaliar descontos com premissas explícitas.
+
+RELACIONAMENTO
+Diagnóstico consultivo
+Validação das regras
+Revisão periódica de decisões
+
+CANAIS
+Portfólio e LinkedIn
+Demonstração do case
+Indicações e parceiros
+
+SEGMENTOS DE CLIENTES
+Varejo e distribuição multicanal
+Gestores comerciais e financeiros
+Hipótese de público a validar
+
+ESTRUTURA DE CUSTOS
+Implantação e suporte
+Infraestrutura e licenças
+Integrações e aquisição
+
+FONTES DE RECEITA
+Implantação por escopo
+Acompanhamento recorrente
+Expansões contratadas
+Monetização hipotética
+
+Bottom full-width footer visible and clearly readable:
+Dados sintéticos · Demanda e monetização não validadas · Contribuição não é lucro líquido
+Lower small attribution:
+Estrutura: Business Model Canvas / Strategyzer · Elaboração do case: Matheus Siqueira · 08/10/2026
+Recompose as needed to avoid any clipped or tiny text. All typography correct Portuguese accents. No arbitrary stats, no navigation, no CTA buttons, no browser chrome.
