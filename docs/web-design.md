@@ -6,8 +6,9 @@ Elemento central: ponte financeira contínua, não uma coleção de cards decora
 
 Paleta: paper #FAFBFC; ink #17212B; muted #526271; line #DDE4EA;
 revenue #2463A6; margin #08745B; loss #BC3941. Cor só para dados e seus significados.
-Tipografia: Arial/Helvetica para leitura executiva, números tabulares; títulos com
-escala moderada, sem depender de fonte externa. Conteúdo alinhado à esquerda.
+Tipografia: Source Sans 3 para leitura e Source Serif 4 para títulos, com números
+tabulares. Fontes baixadas no build por next/font e servidas localmente em runtime.
+O primeiro build requer acesso à origem das fontes. Conteúdo alinhado à esquerda.
 
 Layout: cabeçalho compacto → mensagem de decisão + ponte financeira → faixa KPI →
 série mensal e canais → quadrante/tabela produtos → arquitetura e metodologia.

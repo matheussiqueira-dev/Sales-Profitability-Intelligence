@@ -1,7 +1,57 @@
 import Link from "next/link";
+import type { Channel, Segment } from "@/lib/analytics";
 import { loadAnalytics } from "@/lib/analytics";
 import { money, percent } from "@/lib/format";
 import { ChannelChart, ProductQuadrant, Trend } from "@/components/charts";
+import { Waterfall } from "@/components/waterfall";
+
+/** Display order and Portuguese labels; keys stay as exported by the warehouse view. */
+const SEGMENTS: Record<string, { label: string; description: string }> = {
+  Champions: {
+    label: "Campeões",
+    description: "Receita no P75 e margem acima da média",
+  },
+  "High Margin": {
+    label: "Alta margem",
+    description: "Margem acima da média, receita menor",
+  },
+  "High Revenue / Low Margin": {
+    label: "Receita alta, margem baixa",
+    description: "Prioridade para rever condições comerciais",
+  },
+  "Low Value": {
+    label: "Baixo valor",
+    description: "Receita e margem abaixo das referências",
+  },
+  "At Risk": {
+    label: "Em risco",
+    description: "Sem pedido há mais de 90 dias",
+  },
+};
+const SEGMENT_ORDER = Object.keys(SEGMENTS);
+
+const byNumber =
+  <T,>(pick: (item: T) => string | null) =>
+  (a: T, b: T) =>
+    Number(pick(b) ?? -Infinity) - Number(pick(a) ?? -Infinity);
+
+function channelHeadline(channels: Channel[]) {
+  const topRevenue = [...channels].sort(byNumber((c) => c.net_revenue))[0];
+  const topMargin = [...channels].sort(
+    byNumber((c) => c.margin_percentage),
+  )[0];
+  return topRevenue.channel_name === topMargin.channel_name
+    ? `${topRevenue.channel_name} lidera receita e margem.`
+    : `${topRevenue.channel_name} lidera a receita; ${topMargin.channel_name}, a margem.`;
+}
+
+function orderedSegments(segments: Segment[]) {
+  return [...segments].sort(
+    (a, b) =>
+      (SEGMENT_ORDER.indexOf(a.segment) + 1 || 99) -
+      (SEGMENT_ORDER.indexOf(b.segment) + 1 || 99),
+  );
+}
 
 export default function Page() {
   const {
@@ -12,23 +62,33 @@ export default function Page() {
     segments,
     manifest,
   } = loadAnalytics();
-  const bridge = [
-    { label: "Receita bruta", value: s.gross_revenue, kind: "revenue" },
-    { label: "Descontos", value: s.discount_value, kind: "cost" },
-    { label: "Devoluções", value: s.return_value, kind: "cost" },
-    { label: "CMV", value: s.total_product_cost, kind: "cost" },
-    { label: "Frete", value: s.freight_allocated, kind: "cost" },
-    { label: "Taxas e embalagem", value: s.variable_cost_value, kind: "cost" },
-    { label: "Contribuição", value: s.contribution_margin, kind: "margin" },
-  ];
-  const best = [...channels].sort(
-    (a, b) => Number(b.margin_percentage) - Number(a.margin_percentage),
-  )[0];
+  const best = [...channels].sort(byNumber((c) => c.margin_percentage))[0];
+  const margins = months
+    .map((m) => m.margin_percentage)
+    .filter((m): m is string => m !== null)
+    .map(Number);
+  const lossProducts = products.filter(
+    (p) => Number(p.contribution_margin) < 0,
+  ).length;
+  const segmentTotal = segments.reduce(
+    (total, x) => total + Math.max(0, Number(x.contribution_margin)),
+    0,
+  );
+  const gross = Number(s.gross_revenue);
+  const perHundred = gross
+    ? (Number(s.contribution_margin) / gross) * 100
+    : null;
+  const snapshotDate =new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeZone: "America/Fortaleza",
+  }).format(new Date(manifest.completed_at));
+  const period = `de ${manifest.period.from.slice(0, 4)} a ${manifest.period.through_month.slice(0, 4)}`;
+
   return (
     <main id="content">
       <section className="intro">
         <div>
-          <p className="context">Case de Analytics Engineering · 2024–2025</p>
+          <p className="context">Case de Analytics Engineering com vendas {period}</p>
           <h1>
             Vender mais.
             <br />
@@ -43,54 +103,46 @@ export default function Page() {
             Explorar a rentabilidade
           </Link>
         </div>
-        <aside className="decision">
-          <p>O que a base mostra</p>
-          <h2>{best.channel_name} tem a maior margem.</h2>
+        <aside className="decision" aria-labelledby="decision-title">
+          <h2 id="decision-title">{best.channel_name} tem a maior margem.</h2>
           <p>
-            {percent(best.margin_percentage)} da receita líquida permanece como
-            contribuição. Volume de vendas e rentabilidade contam histórias
-            diferentes.
+            <strong className="decision-figure">
+              {percent(best.margin_percentage)}
+            </strong>{" "}
+            da receita líquida permanece como contribuição. Volume de vendas e
+            rentabilidade contam histórias diferentes.
           </p>
-          <Link href="/methodology">Entender as premissas</Link>
+          <Link className="text-link" href="/methodology">
+            Entender as premissas
+          </Link>
         </aside>
       </section>
-      <div className="provenance">
-        <span>Dados sintéticos</span>
-        <span>Contrato financeiro V2</span>
-        <span>Conciliação em centavos aprovada</span>
-        <span>
-          Snapshot de{" "}
-          {new Intl.DateTimeFormat("pt-BR", {
-            dateStyle: "short",
-            timeZone: "America/Fortaleza",
-          }).format(new Date(manifest.completed_at))}
-        </span>
-      </div>
-      <section aria-labelledby="bridge-title">
+
+      <ul className="provenance" aria-label="Procedência dos dados">
+        <li>Dados sintéticos</li>
+        <li>Contrato financeiro V2</li>
+        <li>Conciliação em centavos aprovada</li>
+        <li>
+          Snapshot <code>{manifest.snapshot.slice(0, 8)}</code> de{" "}
+          {snapshotDate}
+        </li>
+      </ul>
+
+      <section className="bridge-section" aria-labelledby="bridge-title">
         <div className="section-heading">
-          <h2 id="bridge-title">Da venda à contribuição</h2>
-          <p>A receita líquida é a bruta menos descontos e devoluções.</p>
+          <h2 id="bridge-title">
+            {perHundred === null
+              ? "Da venda à contribuição"
+              : `De cada R$ 100 vendidos, ${money(perHundred)} viram contribuição.`}
+          </h2>
+          <p id="bridge-scale">
+            Todas as barras usam a mesma escala da receita bruta. A receita
+            líquida é a bruta menos descontos e devoluções.
+          </p>
         </div>
-        <div className="bridge">
-          {bridge.map((item, i) => (
-            <div className={`bridge-step ${item.kind}`} key={item.label}>
-              <span className="operator" aria-hidden="true">
-                {i === 0 ? "" : i === bridge.length - 1 ? "=" : "−"}
-              </span>
-              <div>
-                <span>{item.label}</span>
-                <strong>{money(item.value)}</strong>
-                <div
-                  className="bridge-bar"
-                  style={{
-                    width: `${Math.max(4, (Number(item.value) / Number(s.gross_revenue)) * 100)}%`,
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
+        <Waterfall summary={s} />
       </section>
+
       <section className="kpi-strip" aria-label="Indicadores executivos">
         <div>
           <span>Receita líquida</span>
@@ -115,17 +167,22 @@ export default function Page() {
           <strong>{percent(s.discount_percentage)}</strong>
         </div>
       </section>
+
       <section id="analysis" className="analysis-grid">
-        <article>
+        <article aria-labelledby="trend-title">
           <div className="section-heading">
-            <h2>Receita e contribuição no tempo</h2>
+            <h2 id="trend-title">
+              {margins.length
+                ? `Margem mensal oscila entre ${percent(Math.min(...margins))} e ${percent(Math.max(...margins))}.`
+                : "Receita e contribuição no tempo"}
+            </h2>
             <p>
-              Valores em reais. Cada mês mostra o efeito do mix, desconto e
-              custos.
+              Valores em reais. Cada mês reflete mix, desconto e custos do
+              período.
             </p>
           </div>
-          <div className="legend">
-            <span className="revenue-dot">Receita líquida</span>
+          <div className="legend" aria-hidden="true">
+            <span className="revenue-soft-dot">Receita líquida</span>
             <span className="margin-dot">Contribuição</span>
           </div>
           <Trend months={months} />
@@ -140,16 +197,16 @@ export default function Page() {
               <table>
                 <thead>
                   <tr>
-                    <th>Mês</th>
-                    <th>Receita</th>
-                    <th>Contribuição</th>
-                    <th>Margem</th>
+                    <th scope="col">Mês</th>
+                    <th scope="col">Receita</th>
+                    <th scope="col">Contribuição</th>
+                    <th scope="col">Margem</th>
                   </tr>
                 </thead>
                 <tbody>
                   {months.map((m) => (
                     <tr key={m.month}>
-                      <td>{m.month.slice(0, 7)}</td>
+                      <th scope="row">{m.month.slice(0, 7)}</th>
                       <td>{money(m.net_revenue)}</td>
                       <td>{money(m.contribution_margin)}</td>
                       <td>{percent(m.margin_percentage)}</td>
@@ -160,24 +217,28 @@ export default function Page() {
             </div>
           </details>
         </article>
-        <article>
+        <article aria-labelledby="channel-title">
           <div className="section-heading">
-            <h2>Vendas por canal</h2>
+            <h2 id="channel-title">{channelHeadline(channels)}</h2>
             <p>A maior receita nem sempre produz a maior margem.</p>
+          </div>
+          <div className="legend" aria-hidden="true">
+            <span className="revenue-dot">Receita líquida</span>
+            <span className="margin-dot">Contribuição</span>
           </div>
           <ChannelChart channels={channels} />
           <table className="channel-table">
             <thead>
               <tr>
-                <th>Canal</th>
-                <th>Contribuição</th>
-                <th>Margem</th>
+                <th scope="col">Canal</th>
+                <th scope="col">Contribuição</th>
+                <th scope="col">Margem</th>
               </tr>
             </thead>
             <tbody>
               {channels.map((c) => (
                 <tr key={c.channel_name}>
-                  <td>{c.channel_name}</td>
+                  <th scope="row">{c.channel_name}</th>
                   <td>{money(c.contribution_margin)}</td>
                   <td>{percent(c.margin_percentage)}</td>
                 </tr>
@@ -186,9 +247,14 @@ export default function Page() {
           </table>
         </article>
       </section>
-      <section className="products-section">
+
+      <section className="products-section" aria-labelledby="products-title">
         <div className="section-heading">
-          <h2>Onde receita e margem se encontram</h2>
+          <h2 id="products-title">
+            {lossProducts
+              ? `${lossProducts} de ${products.length} produtos vendem com contribuição negativa.`
+              : "Onde receita e margem se encontram"}
+          </h2>
           <p>
             Produtos com volume elevado merecem atenção quando a margem não
             acompanha.
@@ -196,25 +262,42 @@ export default function Page() {
         </div>
         <ProductQuadrant products={products} />
       </section>
-      <section className="segments">
-        <h2>Clientes, por perfil de rentabilidade</h2>
-        <p className="muted">
-          Segmentação do snapshot completo, com receita P75, margem ponderada e
-          recência.
-        </p>
+
+      <section className="segments" aria-labelledby="segments-title">
+        <div className="section-heading">
+          <h2 id="segments-title">Clientes, por perfil de rentabilidade</h2>
+          <p>
+            Segmentação do snapshot completo, com receita P75, margem ponderada
+            e recência. Barra: participação na contribuição positiva.
+          </p>
+        </div>
         <div className="segment-grid">
-          {segments.map((x) => (
-            <div key={x.segment}>
-              <span>{x.segment}</span>
-              <strong>{x.customers.toLocaleString("pt-BR")}</strong>
-              <small>{money(x.contribution_margin)} em contribuição</small>
-            </div>
-          ))}
+          {orderedSegments(segments).map((x) => {
+            const meta = SEGMENTS[x.segment];
+            const share = segmentTotal
+              ? Math.max(0, Number(x.contribution_margin)) / segmentTotal
+              : 0;
+            return (
+              <div key={x.segment}>
+                <span className="segment-name">{meta?.label ?? x.segment}</span>
+                <strong>{x.customers.toLocaleString("pt-BR")}</strong>
+                <small>{meta?.description ?? "Clientes"}</small>
+                <span className="share-track" aria-hidden="true">
+                  <span style={{ width: `${share * 100}%` }} />
+                </span>
+                <small>
+                  {money(x.contribution_margin)} em contribuição (
+                  {percent(share)})
+                </small>
+              </div>
+            );
+          })}
         </div>
       </section>
-      <section className="method-preview">
+
+      <section className="method-preview" aria-labelledby="method-title">
         <div>
-          <h2>Um número precisa de uma trilha.</h2>
+          <h2 id="method-title">Um número precisa de uma trilha.</h2>
           <p>
             Os mesmos totais atravessam origem, Python e PostgreSQL. A aplicação
             apresenta somente dados agregados do snapshot aprovado.
