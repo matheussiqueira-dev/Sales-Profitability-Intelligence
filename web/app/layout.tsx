@@ -1,6 +1,22 @@
 import type { Metadata } from "next";
+import { Source_Sans_3, Source_Serif_4 } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+
+// Self-hosted at build time by next/font: no runtime request to a font CDN.
+const serif = Source_Serif_4({
+  subsets: ["latin"],
+  weight: ["600"],
+  variable: "--font-serif",
+  display: "swap",
+});
+const sans = Source_Sans_3({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Sales Profitability Intelligence | Matheus Siqueira",
   description:
@@ -12,9 +28,10 @@ export const metadata: Metadata = {
     type: "website",
   },
 };
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={`${serif.variable} ${sans.variable}`}>
       <body>
         <a className="skip-link" href="#content">
           Ir ao conteúdo
@@ -33,7 +50,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </header>
         {children}
         <footer>
-          <span>Matheus Siqueira · Analytics Engineering</span>
+          <span>Matheus Siqueira, Analytics Engineering</span>
           <a href="https://www.matheussiqueira.dev">Conhecer o portfólio</a>
           <span>
             Dados fictícios. Contribuição não representa lucro líquido.

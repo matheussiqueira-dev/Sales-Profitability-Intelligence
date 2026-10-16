@@ -5,7 +5,12 @@ test("dados conciliados, filtros e navegação sem overflow", async ({
 }, testInfo) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  const response = await page.goto("/");
+  expect(response?.headers()["x-content-type-options"]).toBe("nosniff");
+  expect(response?.headers()["x-frame-options"]).toBe("DENY");
+  expect(response?.headers()["content-security-policy"]).toContain(
+    "frame-ancestors 'none'",
+  );
   await expect(
     page.getByRole("heading", { name: "Vender mais. Contribuir quanto?" }),
   ).toBeVisible();

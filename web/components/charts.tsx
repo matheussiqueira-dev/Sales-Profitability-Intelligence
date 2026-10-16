@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -15,12 +15,32 @@ import {
   YAxis,
   ZAxis,
 } from "recharts";
-import type { Month, Channel, Product } from "@/lib/analytics";
+import type { Channel, Month, Product } from "@/lib/analytics";
 import { compact, money, percent } from "@/lib/format";
+import { chart } from "@/lib/tokens";
+
+const tick = { fontSize: 11, fill: chart.axis };
+const MONTHS = [
+  "jan",
+  "fev",
+  "mar",
+  "abr",
+  "mai",
+  "jun",
+  "jul",
+  "ago",
+  "set",
+  "out",
+  "nov",
+  "dez",
+];
+/** "2025-03-01" → "mar/25", parsed from the ISO string to avoid timezone drift. */
+const monthLabel = (iso: string) =>
+  `${MONTHS[Number(iso.slice(5, 7)) - 1]}/${iso.slice(2, 4)}`;
 
 export function Trend({ months }: { months: Month[] }) {
   const data = months.map((m) => ({
-    month: m.month.slice(0, 7),
+    month: monthLabel(m.month),
     receita: Number(m.net_revenue),
     contribuicao: Number(m.contribution_margin),
   }));
@@ -28,30 +48,42 @@ export function Trend({ months }: { months: Month[] }) {
     <div
       className="chart-frame"
       role="img"
-      aria-label="Receita líquida e contribuição mês a mês. Os valores completos estão na tabela abaixo."
+      aria-label="Receita líquida em barras e contribuição em linha, mês a mês. Os valores completos estão na tabela abaixo."
     >
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart
           data={data}
           margin={{ top: 12, right: 12, left: 0, bottom: 8 }}
         >
-          <CartesianGrid vertical={false} stroke="#e4e9ed" />
-          <XAxis dataKey="month" tick={{ fontSize: 11 }} minTickGap={30} />
-          <YAxis tickFormatter={compact} width={55} tick={{ fontSize: 11 }} />
+          <CartesianGrid vertical={false} stroke={chart.grid} />
+          <XAxis
+            dataKey="month"
+            tick={tick}
+            tickLine={false}
+            axisLine={{ stroke: chart.grid }}
+            minTickGap={24}
+          />
+          <YAxis
+            tickFormatter={compact}
+            width={52}
+            tick={tick}
+            tickLine={false}
+            axisLine={false}
+          />
           <Tooltip formatter={(v) => money(String(v))} />
           <Bar
             name="Receita líquida"
             dataKey="receita"
-            fill="#d4e3f1"
+            fill={chart.revenueSoft}
             radius={[3, 3, 0, 0]}
             isAnimationActive={false}
           />
           <Line
             name="Contribuição"
             dataKey="contribuicao"
-            stroke="#08745B"
+            stroke={chart.margin}
             dot={false}
-            strokeWidth={3}
+            strokeWidth={2.5}
             isAnimationActive={false}
           />
         </ComposedChart>
@@ -70,37 +102,44 @@ export function ChannelChart({ channels }: { channels: Channel[] }) {
     <div
       className="chart-frame"
       role="img"
-      aria-label="Receita e contribuição por canal, com tabela de valores logo abaixo."
+      aria-label="Receita líquida e contribuição por canal, na mesma escala. A tabela logo abaixo traz os valores."
     >
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
           layout="vertical"
-          margin={{ top: 12, right: 12, bottom: 8, left: 8 }}
+          barGap={2}
+          margin={{ top: 4, right: 12, bottom: 8, left: 4 }}
         >
-          <CartesianGrid horizontal={false} stroke="#e4e9ed" />
+          <CartesianGrid horizontal={false} stroke={chart.grid} />
           <YAxis
             type="category"
             dataKey="name"
-            width={98}
-            tick={{ fontSize: 11 }}
+            width={96}
+            tick={tick}
+            tickLine={false}
+            axisLine={false}
           />
           <XAxis
             type="number"
             tickFormatter={compact}
-            tick={{ fontSize: 11 }}
+            tick={tick}
+            tickLine={false}
+            axisLine={{ stroke: chart.grid }}
           />
           <Tooltip formatter={(v) => money(String(v))} />
           <Bar
             name="Receita líquida"
             dataKey="receita"
-            fill="#2463a6"
+            fill={chart.revenue}
+            radius={[0, 3, 3, 0]}
             isAnimationActive={false}
           />
           <Bar
             name="Contribuição"
             dataKey="contribuicao"
-            fill="#08745b"
+            fill={chart.margin}
+            radius={[0, 3, 3, 0]}
             isAnimationActive={false}
           />
         </BarChart>
@@ -109,12 +148,21 @@ export function ChannelChart({ channels }: { channels: Channel[] }) {
   );
 }
 
+type Point = { name: string; x: number; y: number; z: number };
+
 export function ProductQuadrant({ products }: { products: Product[] }) {
   const [category, setCategory] = useState("Todas");
+  const categories = useMemo(
+    () =>
+      Array.from(new Set(products.map((p) => p.category))).sort((a, b) =>
+        a.localeCompare(b, "pt-BR"),
+      ),
+    [products],
+  );
   const filtered = products.filter(
     (p) => category === "Todas" || p.category === category,
   );
-  const points = filtered
+  const points: Point[] = filtered
     .filter((p) => p.margin_percentage !== null)
     .map((p) => ({
       name: p.product_name,
@@ -122,6 +170,9 @@ export function ProductQuadrant({ products }: { products: Product[] }) {
       y: Number(p.margin_percentage) * 100,
       z: Number(p.quantity),
     }));
+  // Losses get their own series so the sign is carried by colour and position.
+  const gains = points.filter((p) => p.y >= 0);
+  const losses = points.filter((p) => p.y < 0);
   const sorted = points.map((p) => p.x).sort((a, b) => a - b);
   const revenueThreshold = sorted.length
     ? sorted[Math.floor((sorted.length - 1) * 0.75)]
@@ -132,6 +183,9 @@ export function ProductQuadrant({ products }: { products: Product[] }) {
         totalRevenue) *
       100
     : 0;
+  const ranked = [...filtered].sort(
+    (a, b) => Number(b.net_revenue) - Number(a.net_revenue),
+  );
   return (
     <>
       <div className="section-tools">
@@ -142,34 +196,44 @@ export function ProductQuadrant({ products }: { products: Product[] }) {
           onChange={(e) => setCategory(e.target.value)}
         >
           <option>Todas</option>
-          {Array.from(new Set(products.map((p) => p.category))).map((c) => (
+          {categories.map((c) => (
             <option key={c}>{c}</option>
           ))}
         </select>
-        <span>Referências: receita P75 e margem ponderada</span>
+        <div className="legend">
+          <span className="revenue-dot">Contribuição positiva</span>
+          <span className="loss-dot">Contribuição negativa</span>
+        </div>
+        <span className="tools-note">
+          Tracejado: receita P75 e margem ponderada
+        </span>
       </div>
       <div
         className="chart-frame quadrant"
         role="img"
-        aria-label={`Quadrante de produtos de ${category}. Receita no eixo horizontal, margem no vertical; tamanho representa unidades.`}
+        aria-label={`Quadrante de produtos (${category}): receita líquida no eixo horizontal, margem no vertical, tamanho proporcional às unidades. ${losses.length} produto(s) com contribuição negativa.`}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 10 }}>
-            <CartesianGrid stroke="#e4e9ed" />
+          <ScatterChart margin={{ top: 24, right: 28, bottom: 16, left: 4 }}>
+            <CartesianGrid stroke={chart.grid} />
             <XAxis
               type="number"
               dataKey="x"
               name="Receita líquida"
               tickFormatter={compact}
-              tick={{ fontSize: 11 }}
+              tick={tick}
+              tickLine={false}
+              axisLine={{ stroke: chart.grid }}
             />
             <YAxis
               type="number"
               dataKey="y"
               name="Margem"
               unit="%"
-              width={50}
-              tick={{ fontSize: 11 }}
+              width={48}
+              tick={tick}
+              tickLine={false}
+              axisLine={false}
             />
             <ZAxis
               type="number"
@@ -177,32 +241,53 @@ export function ProductQuadrant({ products }: { products: Product[] }) {
               range={[22, 260]}
               name="Unidades"
             />
+            <ReferenceLine y={0} stroke={chart.axis} strokeWidth={1} />
             <ReferenceLine
               x={revenueThreshold}
-              stroke="#8a98a5"
+              stroke={chart.reference}
               strokeDasharray="4 4"
+              label={{
+                value: "P75",
+                position: "top",
+                fill: chart.axis,
+                fontSize: 11,
+              }}
             />
             <ReferenceLine
               y={averageMargin}
-              stroke="#8a98a5"
+              stroke={chart.reference}
               strokeDasharray="4 4"
+              label={{
+                value: "média",
+                position: "insideTopRight",
+                fill: chart.axis,
+                fontSize: 11,
+              }}
             />
             <Tooltip
               cursor={{ strokeDasharray: "3 3" }}
-              content={({ active, payload }) =>
-                active && payload?.length ? (
+              content={({ active, payload }) => {
+                const point = payload?.[0]?.payload as Point | undefined;
+                return active && point ? (
                   <div className="chart-tooltip">
-                    <strong>{payload[0].payload.name}</strong>
-                    <p>{money(payload[0].payload.x)}</p>
-                    <p>Margem {percent(payload[0].payload.y / 100)}</p>
+                    <strong>{point.name}</strong>
+                    <p>Receita {money(point.x)}</p>
+                    <p>Margem {percent(point.y / 100)}</p>
+                    <p>{point.z.toLocaleString("pt-BR")} unidades</p>
                   </div>
-                ) : null
-              }
+                ) : null;
+              }}
             />
             <Scatter
-              data={points}
-              fill="#2463a6"
+              data={gains}
+              fill={chart.revenue}
               fillOpacity={0.55}
+              isAnimationActive={false}
+            />
+            <Scatter
+              data={losses}
+              fill={chart.loss}
+              fillOpacity={0.7}
               isAnimationActive={false}
             />
           </ScatterChart>
@@ -210,7 +295,8 @@ export function ProductQuadrant({ products }: { products: Product[] }) {
       </div>
       <p className="muted">
         Acima e à direita: receita e margem elevadas. Abaixo e à direita:
-        produtos com receita elevada e contribuição percentual abaixo da média.
+        receita elevada com contribuição percentual abaixo da média. Abaixo da
+        linha de 0%: cada venda reduz o resultado.
       </p>
       <details>
         <summary>Consultar os {filtered.length} produtos em tabela</summary>
@@ -223,33 +309,27 @@ export function ProductQuadrant({ products }: { products: Product[] }) {
           <table>
             <thead>
               <tr>
-                <th>Produto</th>
-                <th>Receita líquida</th>
-                <th>Contribuição</th>
-                <th>Margem</th>
+                <th scope="col">Produto</th>
+                <th scope="col">Receita líquida</th>
+                <th scope="col">Contribuição</th>
+                <th scope="col">Margem</th>
               </tr>
             </thead>
             <tbody>
-              {filtered
-                .sort((a, b) => Number(b.net_revenue) - Number(a.net_revenue))
-                .map((p) => (
-                  <tr key={p.product_name}>
-                    <td>{p.product_name}</td>
-                    <td>{money(p.net_revenue)}</td>
-                    <td
-                      className={
-                        Number(p.contribution_margin) < 0 ? "negative" : ""
-                      }
-                    >
-                      {money(p.contribution_margin)}
-                    </td>
-                    <td>
-                      {p.margin_percentage === null
-                        ? "—"
-                        : percent(p.margin_percentage)}
-                    </td>
-                  </tr>
-                ))}
+              {ranked.map((p) => (
+                <tr key={`${p.category}-${p.product_name}`}>
+                  <th scope="row">{p.product_name}</th>
+                  <td>{money(p.net_revenue)}</td>
+                  <td
+                    className={
+                      Number(p.contribution_margin) < 0 ? "negative" : ""
+                    }
+                  >
+                    {money(p.contribution_margin)}
+                  </td>
+                  <td>{percent(p.margin_percentage)}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
