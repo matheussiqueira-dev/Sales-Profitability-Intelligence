@@ -21,3 +21,4 @@ out/
 test-results/
 playwright-report/
 .vercel/
+.idea/
