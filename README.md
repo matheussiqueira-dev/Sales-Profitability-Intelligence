@@ -3,6 +3,22 @@
 Uma plataforma analítica para descobrir quais produtos, clientes e canais realmente
 geram rentabilidade após considerar descontos, custos, fretes e devoluções.
 
+## Revisão de arquitetura — 08/10/2026
+
+[Análise do processo, correções e prioridades](docs/architecture-review-2026-10-08.md)
+· [ADR-006](docs/adr/006-recoverable-publication.md). Publicação separada do commit,
+lock mantido até terminar exports, hashes dos bytes efetivamente lidos e recuperação
+sem nova ingestão com `python -m src.analytics.publication`.
+
+[Relatório de evolução por fases](docs/roadmap-evolucao-por-fases.md): confiabilidade,
+dashboard com filtros coordenados, simulador web, insights e evolução para uso privado.
+
+Validação desta revisão (15/10/2026): **76 testes Python passaram, incluindo as 5
+integrações PostgreSQL** (`scripts/run_container_checks.ps1`, cobertura 90%), Ruff,
+formatação e checagem de DDL passaram; lint/tipos/build web e dois Playwright passaram.
+Power BI Desktop e CI remota não foram executados nesta revisão. Conferir CSVs antes do
+refresh: `python -m src.analytics.publication --verify`.
+
 ## V2 — entrega vigente
 
 Rentabilidade por **margem de contribuição**, com taxas de pagamento/canal/comissão

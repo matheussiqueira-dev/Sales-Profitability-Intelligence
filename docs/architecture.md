@@ -1,5 +1,18 @@
 # Arquitetura
 
+## Revisão vigente — 08/10/2026
+
+O pipeline e o inicializador agora mantêm lock de sessão até terminar suas operações;
+a publicação usa temporários exclusivos por arquivo, marcador de status/hashes e
+recuperação sem recarga a partir do raw persistido. Hash e leitura CSV usam os mesmos
+bytes. O comando de recuperação lê sob REPEATABLE READ e READ ONLY.
+
+[Revisão completa, validação e riscos](architecture-review-2026-10-08.md) ·
+[ADR-006](adr/006-recoverable-publication.md).
+Integração PostgreSQL destas mudanças passou em 15/10/2026 (container descartável). Os parágrafos abaixo
+são o registro V1/V2 anterior: referências a lock transacional e rerun como única
+recuperação foram substituídas pela revisão acima.
+
 ## V2 vigente
 
 Fonte adicional variable_costs, contratos declarativos Pandera sem coerção Decimal,
