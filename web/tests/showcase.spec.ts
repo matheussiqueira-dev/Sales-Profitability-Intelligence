@@ -1,5 +1,22 @@
 import { expect, test } from "@playwright/test";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
+// The headline margin comes from the active snapshot, never from a literal in the test.
+const dataDir = join(__dirname, "..", "public", "data");
+const { snapshot } = JSON.parse(
+  readFileSync(join(dataDir, "manifest.json"), "utf8"),
+) as { snapshot: string };
+const { margin_percentage: marginPercentage } = JSON.parse(
+  readFileSync(
+    join(dataDir, "snapshots", snapshot, "executive-summary.json"),
+    "utf8",
+  ),
+) as { margin_percentage: string };
+const marginText = new Intl.NumberFormat("pt-BR", {
+  style: "percent",
+  maximumFractionDigits: 1,
+}).format(Number(marginPercentage));
 test("dados conciliados, filtros e navegação sem overflow", async ({
   page,
 }, testInfo) => {
@@ -17,7 +34,7 @@ test("dados conciliados, filtros e navegação sem overflow", async ({
   await expect(
     page.getByText("Conciliação em centavos aprovada"),
   ).toBeVisible();
-  await expect(page.getByText("22,8%", { exact: true })).toBeVisible();
+  await expect(page.getByText(marginText, { exact: true })).toBeVisible();
   await page
     .getByLabel("Categoria", { exact: true })
     .selectOption("Acessórios");
