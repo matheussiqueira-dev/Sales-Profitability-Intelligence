@@ -325,7 +325,7 @@ git diff -- powerbi
 git status --short
 ```
 
-Atualize `powerbi/validation.md`, `docs/v2-delivery-report.md` e README com versão,
+Atualize `powerbi/validation.md`, `docs/history/v2-delivery-report.md` e README com versão,
 origem realmente testada, período, evidências e pendências resolvidas. Confira os
 links. Não copiar outputs contendo dados sensíveis. Artefatos locais são ignorados;
 promova somente as evidências revisadas que devem integrar a documentação.

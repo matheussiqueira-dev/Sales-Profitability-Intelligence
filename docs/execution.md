@@ -150,4 +150,4 @@ O pipeline não imprime DSN nem credenciais; pode ser chamado por código para
 diagnóstico local com exceções SQL parametrizadas ocultas.
 
 Power BI: siga [guia](../powerbi/README.md). A execução remota de GitHub Actions
-confirmada após o push autorizado está registrada no [relatório](delivery-report.md).
+confirmada após o push autorizado está registrada no [relatório](history/delivery-report.md).

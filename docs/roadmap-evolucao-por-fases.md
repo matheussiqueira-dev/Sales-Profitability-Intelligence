@@ -361,7 +361,7 @@ demanda, dados e condições operacionais demonstrados.
 - [Contrato financeiro vigente](business-rules.md).
 - [Modelo dimensional](data-model.md).
 - [Hipótese de modelo de negócios](business-model.md).
-- [Plano sênior anterior](senior-delivery-plan.md), preservado como contexto;
+- [Plano sênior anterior](history/senior-delivery-plan.md), preservado como contexto;
   a situação do código e a revisão atual prevalecem sobre diagnósticos antigos.
 
 Não foram pesquisados preços, versões de novos fornecedores ou tendências de

@@ -13,17 +13,15 @@ sem nova ingestão com `python -m src.analytics.publication`.
 [Relatório de evolução por fases](docs/roadmap-evolucao-por-fases.md): confiabilidade,
 dashboard com filtros coordenados, simulador web, insights e evolução para uso privado.
 
-Validação desta revisão (15/10/2026): **76 testes Python passaram, incluindo as 5
-integrações PostgreSQL** (`scripts/run_container_checks.ps1`, cobertura 90%), Ruff,
-formatação e checagem de DDL passaram; lint/tipos/build web e dois Playwright passaram.
-Power BI Desktop e CI remota não foram executados nesta revisão. Conferir CSVs antes do
+As contagens de testes, a cobertura e o resultado do CI ficam em um só lugar, atualizado
+a cada revisão: [plano de evolução, seção 2](docs/EVOLUTION.md). Conferir CSVs antes do
 refresh: `python -m src.analytics.publication --verify`.
 
 ## V2 — entrega vigente
 
 Rentabilidade por **margem de contribuição**, com taxas de pagamento/canal/comissão
 e embalagem incluídas. [Três achados e decisões](docs/v2-business-findings.md) ·
-[plano executado](docs/v2-execution-plan.md) · [evidência Power BI](powerbi/validation.md).
+[plano executado](docs/history/v2-execution-plan.md) · [evidência Power BI](powerbi/validation.md).
 
 ![Showcase executivo real, build de produção em desktop](docs/images/web-desktop.png)
 
@@ -40,7 +38,7 @@ Web: Next.js/TypeScript/Tailwind/Recharts, JSONs agregados com hashes, sem crede
 
 Qualidade V2: Pandera sem coerção monetária para float + validações relacionais;
 DDL raw/staging explícito, migração V1→V2, CHECKs financeiros, lock, rollback e
-reconciliação. **69 testes passaram, cobertura 92%**. CI foi expandida para smoke do
+reconciliação. CI foi expandida para smoke do
 gerador, drift de DDL, web e artefatos Power BI; os cinco jobs da
 [CI remota V2](https://github.com/matheussiqueira-dev/Sales-Profitability-Intelligence/actions/runs/37532672986)
 passaram. [Aplicação na Vercel](https://inteligence-bi-tau.vercel.app) ·
@@ -51,8 +49,7 @@ depois `python -m src.pipeline`. Para clone novo, bootstrap gera oito fontes.
 Não altera `.env`, reescreve os sete CSVs V1 ou remove volumes automaticamente.
 Custos são hipóteses sintéticas e não benchmarks de mercado.
 
-As seções abaixo descrevem o MVP V1 preservado como histórico. Números de contribuição
-V1 excluem custos variáveis e foram substituídos pela entrega V2 acima.
+Os relatórios e planos do MVP V1 e da V2 estão arquivados em [docs/history](docs/history/).
 
 ## Overview e problema de negócio
 
@@ -121,12 +118,14 @@ por maior resto. Margem % fica indefinida se receita for zero.
 | Receita líquida | R$ 109.994.862,14 |
 | CMV | R$ 72.970.809,50 |
 | Frete real | R$ 2.178.770,47 |
-| Contribuição | R$ 34.845.282,17 |
-| Margem ponderada | 31,68% |
+| Custos variáveis | R$ 9.740.706,54 |
+| Contribuição | R$ 25.104.575,63 |
+| Margem ponderada | 22,82% |
 
-Reconciliação passou com diferença zero nas sete métricas, IDs/contagens e frete por
-pedido; SQL independente também conferiu os totais. Dez regras geraram 151 alertas
-no snapshot padrão. São sinais determinísticos e não comprovação de causa.
+Valores do snapshot publicado `ff15f8f25127597a`, conferidos contra
+`web/public/data/snapshots/ff15f8f25127597a/executive-summary.json`. A reconciliação
+compara Python, SQL e DAX; as dez regras de `src/analytics/insights.py` geram sinais
+determinísticos, que não comprovam causa.
 Views por produto, cliente, canal, mês, devolução e metas;
 [consultas demonstrativas](sql/07_example_queries.sql).
 
@@ -135,8 +134,7 @@ Views por produto, cliente, canal, mês, devolução e metas;
 Entregue: [guia de implementação](powerbi/README.md), [Power Query](powerbi/power-query.md),
 [DAX](powerbi/dax-measures.md) e [especificação](powerbi/dashboard-specification.md).
 Páginas: Executivo, Produtos, Clientes, Canais e Simulador.
-PBIX, execução de DAX no motor Desktop, screenshots e validação visual permanecem
-pendentes. Arquivos Markdown não são apresentados como dashboard funcionando.
+Estado de cada validação: [evidência Power BI](powerbi/validation.md).
 
 ## Simulador de desconto
 
@@ -144,9 +142,7 @@ pendentes. Arquivos Markdown não são apresentados como dashboard funcionando.
 python -m src.analytics.simulator --discount 0.18
 ```
 
-Para desconto uniforme de 18%: receita simulada R$100.264.846,94, contribuição
-R$25.115.266,97, impacto −R$9.730.015,20 e crescimento de volume necessário 38,74%.
-Mantém mix e taxa de devolução; compensação assume custos variáveis proporcionais.
+O resultado sai em JSON, sobre o snapshot mais recente do warehouse. Mantém mix e taxa de devolução; compensação assume custos variáveis proporcionais.
 Não é previsão de demanda. Preço=100, custos=70, margem mínima=15% → teto 17,65%.
 
 ## Data Quality
@@ -203,7 +199,7 @@ powershell -ExecutionPolicy Bypass -File scripts/run_integration.ps1
 
 Integração exige banco isolado terminado em `_test`. Verifica rerun idempotente,
 views, schemas desconhecidos e rollback de falha após carga. Cobertura e resultado
-da última validação em [relatório de entrega](docs/delivery-report.md).
+da última validação em [relatório de entrega](docs/history/delivery-report.md).
 GitHub Actions passou em Linux: unitários com Python 3.12/3.13 e integração PostgreSQL.
 [Execução confirmada](https://github.com/matheussiqueira-dev/Sales-Profitability-Intelligence/actions/runs/37403390421).
 
@@ -219,7 +215,7 @@ de produtos devolvidos. Custo estático, sem SCD2; devolução imputada à data 
 full refresh local. Segmentar clientes usa o snapshot completo. Produção exige
 roles de menor privilégio, TLS, backups, retenção e migrações versionadas.
 
-Plano vigente de evolução: [plano de entrega sênior](docs/senior-delivery-plan.md).
+Plano vigente de evolução: [docs/EVOLUTION.md](docs/EVOLUTION.md).
 Próximos passos: montar/validar PBIX → screenshots reais → revisão comercial das
 premissas → política histórica de custos e devoluções → incremental/orquestração.
 Na evolução V2 autorizada em 06/10/2026, a aplicação web foi implementada;

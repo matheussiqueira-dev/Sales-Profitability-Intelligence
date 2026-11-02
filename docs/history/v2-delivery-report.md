@@ -49,7 +49,7 @@ plano de execução adaptado, guia web, projeto PBIP/TMDL/PBIR e validation.md.
 - Full npm audit detecta vulnerabilidade transitiva sem patch publicado em braces
   de ferramentas dev. Runtime está limpo. Não aplicado downgrade incompatível.
 - Push V2, CI remota V2 e deploy web foram concluídos posteriormente conforme
-  [registro de publicação](web-release.md). Publicação no Power BI Service e
+  [registro de publicação](../web-release.md). Publicação no Power BI Service e
   abertura de visibilidade do repositório não executadas.
 
 Não se considera release pública concluída com esses gates abertos. Nenhum PBIX,
