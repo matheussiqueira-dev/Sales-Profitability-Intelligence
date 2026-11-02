@@ -36,7 +36,7 @@
 | Testes e2e | `npm run test:e2e` | PASS, 6/6 (desktop + mobile), com Chromium 1243 do sistema e build `next build --webpack` com fontes simuladas | 2026-11-02 |
 | Build | `npm run build` | PASS só com `next build --webpack` + `NEXT_FONT_GOOGLE_MOCKED_RESPONSES` (Google Fonts bloqueado); build real a cargo do CI | 2026-11-02 |
 | Vulnerabilidades (audit) | `pip-audit -r requirements.lock.txt` · `npm audit` | Python 0 · web 0 high/critical, 16 moderate (`minimatch` via eslint; só dev; `--omit=dev` = 0) | 2026-11-02 |
-| CI no GitHub | API do GitHub (Actions) | último run registrado sem chegar a runner; execução retomada em outros repositórios em 2026-11-02; resultado deste ciclo na seção 10 | 2026-11-02 |
+| CI no GitHub | API do GitHub (Actions) | último run registrado sem chegar a runner; execução retomada em outros repositórios em 2026-11-02; run de `6390381` (2026-11-02) verde em todos os jobs | 2026-11-02 |
 
 Observações:
 - 2026-10-26: critical do `next` e high do `zod` corrigidos no lockfile (`e24b88e`). Histórico: o job `web` roda `npm audit --omit=dev` sem `--audit-level`, então o critical do `next` 16.4.0 deixa o próximo run vermelho. O range `^16.0.0` permite 16.4.3 só com atualização do lockfile.
@@ -120,7 +120,6 @@ Observações:
 
 ## 9. Decisões pendentes do dono
 
-- Verificar cobrança/minutos do GitHub Actions: os jobs dos repositórios privados da conta não chegam a um runner desde 2026-10-24.
 - Produto canônico: este repositório ou `Intelig-ncia-de-vendas-e-rentabilidade`?
 - Design: adotar o padrão dark-only, IBM Plex Sans e `ms-tokens.css`, ou manter a exceção de `docs/web-design.md` (tema claro, Source Serif/Sans)?
 - Retirar os arquivos de rascunho do índice agora? O repositório será público (exige purga de histórico)?
