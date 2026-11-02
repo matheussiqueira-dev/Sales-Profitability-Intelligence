@@ -37,9 +37,7 @@ const byNumber =
 
 function channelHeadline(channels: Channel[]) {
   const topRevenue = [...channels].sort(byNumber((c) => c.net_revenue))[0];
-  const topMargin = [...channels].sort(
-    byNumber((c) => c.margin_percentage),
-  )[0];
+  const topMargin = [...channels].sort(byNumber((c) => c.margin_percentage))[0];
   return topRevenue.channel_name === topMargin.channel_name
     ? `${topRevenue.channel_name} lidera receita e margem.`
     : `${topRevenue.channel_name} lidera a receita; ${topMargin.channel_name}, a margem.`;
@@ -78,7 +76,7 @@ export default function Page() {
   const perHundred = gross
     ? (Number(s.contribution_margin) / gross) * 100
     : null;
-  const snapshotDate =new Intl.DateTimeFormat("pt-BR", {
+  const snapshotDate = new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
     timeZone: "America/Fortaleza",
   }).format(new Date(manifest.completed_at));
@@ -88,7 +86,9 @@ export default function Page() {
     <main id="content">
       <section className="intro">
         <div>
-          <p className="context">Case de Analytics Engineering com vendas {period}</p>
+          <p className="context">
+            Case de Analytics Engineering com vendas {period}
+          </p>
           <h1>
             Vender mais.
             <br />

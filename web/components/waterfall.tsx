@@ -17,13 +17,21 @@ export function Waterfall({ summary: s }: { summary: Summary }) {
     { label: "Receita bruta", value: Number(s.gross_revenue), kind: "total" },
     { label: "Descontos", value: Number(s.discount_value), kind: "deduction" },
     { label: "Devoluções", value: Number(s.return_value), kind: "deduction" },
-    { label: "Receita líquida", value: Number(s.net_revenue), kind: "subtotal" },
+    {
+      label: "Receita líquida",
+      value: Number(s.net_revenue),
+      kind: "subtotal",
+    },
     {
       label: "CMV das unidades retidas",
       value: Number(s.total_product_cost),
       kind: "deduction",
     },
-    { label: "Frete real", value: Number(s.freight_allocated), kind: "deduction" },
+    {
+      label: "Frete real",
+      value: Number(s.freight_allocated),
+      kind: "deduction",
+    },
     {
       label: "Taxas, comissões e embalagem",
       value: Number(s.variable_cost_value),
@@ -67,11 +75,7 @@ export function Waterfall({ summary: s }: { summary: Summary }) {
         <li className={`waterfall-row ${row.kind}`} key={row.label}>
           <span className="waterfall-label">
             <span className="operator" aria-hidden="true">
-              {row.kind === "deduction"
-                ? "−"
-                : row.kind === "total"
-                  ? ""
-                  : "="}
+              {row.kind === "deduction" ? "−" : row.kind === "total" ? "" : "="}
             </span>
             {row.label}
           </span>

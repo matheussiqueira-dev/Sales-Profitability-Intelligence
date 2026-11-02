@@ -1,0 +1,6 @@
+# Written by the pipeline and verified by SHA-256: formatting would change the hashes.
+public/data/
+.next/
+node_modules/
+playwright-report/
+test-results/

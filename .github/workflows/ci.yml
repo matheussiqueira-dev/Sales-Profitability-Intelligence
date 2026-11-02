@@ -61,10 +61,10 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
-      - run: npm run lint && npm run typecheck && npm run build
+      - run: npm run lint && npm run format:check && npm run typecheck && npm run build
       - run: npm audit --omit=dev
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test
+      - run: npm run test:e2e
   powerbi-artifacts:
     runs-on: windows-latest
     steps:
