@@ -1,6 +1,6 @@
 # Plano de Evolução — Sales-Profitability-Intelligence
 
-> Documento vivo, revisado semanalmente. Última revisão: 2026-11-02.
+> Documento vivo, revisado semanalmente. Última revisão: 2026-11-09.
 > Regra central: nenhuma mudança entra sem estar ligada a um objetivo desta página e sem manter ou melhorar as métricas da seção 2.
 
 ## 1. Identidade do projeto
@@ -11,13 +11,13 @@
   - Python ≥ 3.12 (CI em 3.12 e 3.13): pandas 3.0.6, Pandera 0.34.1, SQLAlchemy 2.1.3, psycopg 3.3.6, python-dotenv 1.2.4, jsonschema 4.26.0; pytest 9.1.1, pytest-cov 7.1.0, Ruff 0.16.10 (`requirements.lock.txt`);
   - PostgreSQL 17 (`postgres:17-alpine` com digest) e pgAdmin 9 opcional (Docker Compose);
   - Power BI PBIP com páginas PBIR e modelo TMDL em `powerbi/project/`;
-  - `web/`: Next.js 16.4.3, React 19.3.0, Recharts 3, Tailwind CSS 4.3.3, TypeScript 5.9.3, ESLint 9.39.5 + `eslint-config-next` 16.4.3, Playwright 1.63.0, Prettier 3.9.9; Node 22 no CI.
+  - `web/`: Next.js 16.4.5, React 19.3.1, Recharts 3, Tailwind CSS 4.3.5, TypeScript 5.9.3, ESLint 9.39.5 + `eslint-config-next` 16.4.5, Playwright 1.65.0, Prettier 3.9.10; Node 22 no CI.
 - **Gerenciador de pacotes:** pip com `requirements.lock.txt` (pins exatos; `requirements.txt` com faixas) e npm (`web/package-lock.json`, ranges com `^` no `package.json`).
-- **Deploy:** Vercel, projeto `inteligence-bi`, Root Directory `web`; produção em https://inteligence-bi-tau.vercel.app (README, `docs/web-release.md`). Repositório privado.
+- **Deploy:** Vercel, projeto `inteligence-bi`, Root Directory `web`; produção em https://inteligence-bi-tau.vercel.app (README, `docs/web-release.md`). Repositório privado. CI do GitHub só sob demanda (`workflow_dispatch`) desde 2026-11-06, por decisão FinOps do dono.
 - **Estrutura:**
   - `src/` — `ingestion`, `validation` (Pandera, qualidade, reconciliação), `transformation` (dimensões, vendas, métricas financeiras), `database` (conexão, loader, lease de sessão), `analytics` (insights, simulador, publicação recuperável, export web), `pipeline.py`;
   - `sql/` — DDL e views analíticas; `scripts/` — gerador de dados, DDL, Power BI, export web, checagens;
-  - `tests/` — 13 arquivos (unitários e 5 de integração PostgreSQL marcados `integration`);
+  - `tests/` — 14 arquivos (unitários e 5 de integração PostgreSQL marcados `integration`);
   - `powerbi/` — projeto PBIP e documentação DAX/Power Query; `docs/` — arquitetura, ADRs 001–006, dicionário; relatórios e planos antigos em `docs/history/`;
   - `web/` — `app/` (`/` e `/methodology`), `components/`, `lib/` (validação do manifesto e formatação), `public/data/snapshots/` (dois snapshots), `tests/showcase.spec.ts`;
   - raiz com arquivos de briefing e rascunhos (`Sales Profitability Intelligence briefing.md`/`.pdf`, `# Sales & Profitability Intelligenc.txt`, `search.txt`).
@@ -27,18 +27,19 @@
 
 | Verificação | Comando | Resultado | Data |
 | --- | --- | --- | --- |
-| Instalação | `python3.12 -m venv .venv && pip install -r requirements.lock.txt` · `npm ci` (Node 22.23.4) | PASS · PASS | 2026-11-02 |
-| Lint | `ruff check .` · `ruff format --check .` · `npm run lint` · `npm run format:check` | PASS · PASS (85 arquivos) · PASS · PASS (snapshots fora do Prettier: são gerados e têm hash) | 2026-11-02 |
-| Typecheck | `npm run typecheck` | PASS; Python sem mypy/pyright | 2026-11-02 |
-| Testes | `pytest -m 'not integration' -q` | 81 passando / 0 falhando / 5 de integração não executados (sem PostgreSQL no ambiente) | 2026-11-02 |
-| Cobertura | `pytest -m 'not integration' --cov=src` | 80% só com unitários (738 statements); `insights.py` e `web_export.py` 100%, `simulator.py` 94%; com integração: não verificado | 2026-11-02 |
-| Checagens de dados | — | não repetidas neste ciclo (sem mudança em `src/`, SQL ou Power BI) | 2026-11-02 |
-| Testes e2e | `npm run test:e2e` | PASS, 6/6 (desktop + mobile), com Chromium 1243 do sistema e build `next build --webpack` com fontes simuladas | 2026-11-02 |
-| Build | `npm run build` | PASS só com `next build --webpack` + `NEXT_FONT_GOOGLE_MOCKED_RESPONSES` (Google Fonts bloqueado); build real a cargo do CI | 2026-11-02 |
-| Vulnerabilidades (audit) | `pip-audit -r requirements.lock.txt` · `npm audit` | Python 0 · web 0 high/critical, 16 moderate (`minimatch` via eslint; só dev; `--omit=dev` = 0) | 2026-11-02 |
-| CI no GitHub | API do GitHub (Actions) | último run registrado sem chegar a runner; execução retomada em outros repositórios em 2026-11-02; run de `6390381` (2026-11-02) verde em todos os jobs | 2026-11-02 |
+| Instalação | `python3.12 -m venv .venv && pip install -r requirements.lock.txt` · `npm ci` (Node 22.23.4) | PASS · PASS | 2026-11-09 |
+| Lint | `ruff check .` · `ruff format --check .` · `npm run lint` · `npm run format:check` | PASS · PASS (86 arquivos) · PASS · PASS | 2026-11-09 |
+| Typecheck | `npm run typecheck` | PASS; Python sem mypy/pyright | 2026-11-09 |
+| Testes | `pytest -m 'not integration' -q` | 94 passando / 0 falhando / 5 de integração não executados (sem PostgreSQL no ambiente) | 2026-11-09 |
+| Cobertura | `pytest -m 'not integration' --cov=src` | 85% só com unitários (738 statements, 109 sem cobertura); `lease.py` 100%, `loader.py` 73%; com integração: não verificado | 2026-11-09 |
+| Checagens de dados | — | não repetidas neste ciclo (sem mudança em `src/`, SQL ou Power BI) | 2026-11-09 |
+| Testes e2e | `npm run test:e2e` | PASS, 6/6 (desktop + mobile), com Google Chrome for Testing 153 via `PLAYWRIGHT_CHANNEL=chrome` e build `next build --webpack` com fontes simuladas | 2026-11-09 |
+| Build | `npm run build` | PASS só com `next build --webpack` + `NEXT_FONT_GOOGLE_MOCKED_RESPONSES` (Google Fonts bloqueado); build real a cargo do CI | 2026-11-09 |
+| Vulnerabilidades (audit) | `pip-audit -r requirements.lock.txt` · `npm audit` | Python 0 · web 0 high/critical, 8 moderate (`minimatch` via eslint; só dev; `--omit=dev` = 0) | 2026-11-09 |
+| CI no GitHub | API do GitHub (Actions) | último run verde: `6390381` (2026-11-02); desde `c13747e` o workflow é só `workflow_dispatch`, então os pushes deste ciclo não disparam CI (nenhum run manual disparado, para respeitar a política de minutos) | 2026-11-09 |
 
 Observações:
+- 2026-11-09: os moderate da web caíram de 16 para 8 sem mudança no projeto (base de advisories). B7 (fonte local) ficou fora deste ciclo porque depende da decisão de design da seção 9 (Source × IBM Plex Sans).
 - 2026-10-26: critical do `next` e high do `zod` corrigidos no lockfile (`e24b88e`). Histórico: o job `web` roda `npm audit --omit=dev` sem `--audit-level`, então o critical do `next` 16.4.0 deixa o próximo run vermelho. O range `^16.0.0` permite 16.4.3 só com atualização do lockfile.
 - Continuam versionados (`git ls-files`): `Sales Profitability Intelligence briefing.md`, `Sales Profitability Intelligence briefing.pdf`, `# Sales & Profitability Intelligenc.txt`, `search.txt` e `docs/business-model-visual-prompt.txt` — rascunhos de planejamento e conversa que não são produto. Com o repositório privado, o risco é de exposição se ele for tornado público.
 - Já resolvido desde a auditoria de 2026-10-11: trabalho local de 08/10 commitado (publicação recuperável, ponte financeira, headers de segurança, ADR-006), `.cto-toolkit/` fora do índice e no `.gitignore`.
@@ -56,8 +57,8 @@ Observações:
 
 | # | Eixo | Objetivo | Métrica | Baseline | Meta | Prioridade | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| O1 | Funcionamento | Os 5 jobs do CI verdes e produção com headers completos | jobs verdes; `/` e `/methodology` 200 com CSP, `nosniff`, `Referrer-Policy`, `Permissions-Policy` | job `web` previsto vermelho (critical); produção não verificada | 5/5 por 4 semanas; headers presentes | P0 | ativo |
-| O2 | Cobertura de testes | Cobrir os módulos de saída sem depender do banco | cobertura unitária de `src/` · menor módulo de `analytics/` | 67% · 0% (`simulator.py`) | ≥ 85% · ≥ 70% | P2 | ativo (80% · 67%, `publication.py`) |
+| O1 | Funcionamento | Os 5 jobs do CI verdes e produção com headers completos | jobs verdes; `/` e `/methodology` 200 com CSP, `nosniff`, `Referrer-Policy`, `Permissions-Policy` | job `web` previsto vermelho (critical); produção não verificada | 5/5 por 4 semanas; headers presentes | P0 | ativo (com o CI sob demanda, a meta de 4 semanas precisa ser redefinida, ver seção 9) |
+| O2 | Cobertura de testes | Cobrir os módulos de saída sem depender do banco | cobertura unitária de `src/` · menor módulo de `analytics/` | 67% · 0% (`simulator.py`) | ≥ 85% · ≥ 70% | P2 | monitorado (meta atingida em 2026-11-09: 85% · 67% em `publication.py`, que só tem caminho de integração restante; ver B6) |
 | O3 | Segurança/Higiene | Nenhum rascunho ou conversa versionado; 0 critical/high | arquivos de rascunho no índice · `npm audit` critical+high | 5 · 2 | 0 · 0 | P0 | ativo (`npm audit` 0 critical/high; faltam os 5 rascunhos, B2) |
 | O4 | Performance | Lighthouse mobile da vitrine registrado | Perf / A11y / BP / SEO em `/` | não medido | ≥ 90 / ≥ 95 / ≥ 95 / ≥ 90 | P2 | ativo |
 | O5 | Qualidade/Manutenibilidade | Uma versão dos números e da documentação | conjuntos de KPIs diferentes no README · relatórios de entrega ativos | 2 (V1 e V2) · 5 relatórios sobrepostos | 1 (V2) · 1 + histórico arquivado | P1 | monitorado (meta atingida em 2026-11-02) |
@@ -84,20 +85,22 @@ Observações:
 - [x] **B3 (P1, O6)** (2026-10-26, `a5b2ab4`; o "22,8%" fixo do `showcase.spec.ts` agora vem do snapshot; a conferência em centavos é feita sobre o snapshot, porque a UI arredonda para reais) Criar `web/tests/parity.spec.ts` lendo o `executive-summary.json` do snapshot ativo — 8 degraus da ponte, 5 KPIs e canais batem em centavos; nenhum percentual fixo nos testes; trocar snapshot não exige editar teste.
 - [x] **B4 (P1, O5)** (2026-11-02, `430a663`; o README aponta para a seção 2 deste plano em vez de repetir contagens; seis documentos em `docs/history/`) Reescrever o README com um único conjunto de números (V2) e uma contagem de testes medida, arquivando os relatórios V1/V2 em `docs/history/` — README cita o run de CI e não contradiz o código.
 - [ ] **B5 (P1, O1)** Smoke de produção registrado — `/` e `/methodology` 200, rota inexistente 404, headers completos, sem `X-Powered-By`; anotado na seção 10.
-- [ ] **B6 (P2, O2)** (parcial em 2026-11-02, `7ca0867`: os três módulos ≥ 94%; total 80%, falta `publication.py`, `lease.py`, `loader.py`, `pipeline.py`) Testes unitários de `simulator.py`, `insights.py` e `web_export.py` com fixtures pequenas — cada um ≥ 70%; total unitário ≥ 85%.
+- [x] **B6 (P2, O2)** (2026-11-02, `7ca0867`: os três módulos ≥ 94%; 2026-11-09, `da25b34`: `lease.py` 22% → 100%, `loader.py` 27% → 73%, total 80% → 85%) Testes unitários de `simulator.py`, `insights.py` e `web_export.py` com fixtures pequenas — cada um ≥ 70%; total unitário ≥ 85%.
 - [ ] **B7 (P2, O1)** Fontes via `next/font/local` (Source ou IBM Plex conforme decisão de design) — `npm run build` passa sem acesso a `fonts.googleapis.com`.
 - [x] **B8 (P2, O5)** (2026-11-02, `589e40c`; `PLAYWRIGHT_CHANNEL` opcional; `public/data/` em `.prettierignore`) Scripts `test:e2e` e `format:check` no `web/package.json` (Prettier já instalado) e `channel` configurável no Playwright — CI chama os scripts; `prettier --check` com 0.
 - [ ] **B9 (P2, O1)** Alinhar o shell ao padrão: footer A.9 sem link para o repositório privado, favicon PI, `metadataBase` e OG — favicon 200; footer visível em `/` e `/methodology`.
 - [ ] **B10 (P2, O4)** Lighthouse mobile e axe da vitrine registrados — axe 0 serious/critical em 320/768/1280 px; números na seção 10.
 - [ ] **B11 (P2, O5)** mypy no código Python (`src/`) com config versionada — 0 erros no job `unit`.
-- [ ] **B13 (P1, O1)** Atualizar `next` e `eslint-config-next` para o patch do release de segurança de 2026-11-03 (7 achados médios) — `npm audit --omit=dev` com 0; suíte web verde.
-- [ ] **B14 (P2, O5)** Atualizar patches do lockfile (`@playwright/test` 1.64.1, `prettier` 3.9.10, `react` 19.3.1) — `npm outdated` só com majors.
+- [x] **B13 (P1, O1)** (2026-11-09, `0925e9c`; 16.4.5 só no lockfile, ranges intactos) Atualizar `next` e `eslint-config-next` para o patch do release de segurança de 2026-11-03 (7 achados médios) — `npm audit --omit=dev` com 0; suíte web verde.
+- [x] **B14 (P2, O5)** (2026-11-09, `c4b2809`; também Tailwind 4.3.5 e `react-dom` 19.3.1) Atualizar patches do lockfile (`@playwright/test` 1.64.1, `prettier` 3.9.10, `react` 19.3.1) — `npm outdated` só com majors.
 - [ ] **B12 (P3, O5)** Atualizar actions para as majors atuais, fixar por SHA e Node 24 no job `web` — workflow sem `@v4`/`@v5` soltos; CI verde.
 
 ## 7. Radar técnico
 
 | Data | Item | Fonte | Veredito (adotar / avaliar / descartar) | Motivo |
 | --- | --- | --- | --- | --- |
+| 2026-11-09 | Release de segurança do Next.js de 2026-11-03: linha 16.4.x corrigida em 16.4.5 | https://www.netlify.com/changelog/2026-11-03-nextjs-security-vulnerabilities/ | adotado (`0925e9c`) | Fecha os 7 achados; `npm audit --omit=dev` segue 0. |
+| 2026-11-09 | Playwright 1.65.0 | https://playwright.dev/docs/release-notes | adotado (`c4b2809`) | Minor dentro do range; e2e 6/6. |
 | 2026-11-02 | Release de segurança do Next.js anunciado para 2026-11-03 (7 achados médios) | https://nextjs.org/blog/upcoming-nextjs-security-release-november-2026 | adotar (B13) | Ainda não publicado nesta revisão; o job `web` falha em `npm audit --omit=dev` sem `--audit-level`, então pode ficar vermelho até o patch. |
 | 2026-11-02 | GHSA-g3hv-75wg-m249 (`minimatch` < 11.0.1, só dev) | https://github.com/advisories/GHSA-g3hv-75wg-m249 | avaliar | Sem correção compatível com ESLint 9/10; não afeta `--omit=dev`. |
 | 2026-10-26 | Atualização de segurança do Next.js de 14/10/2026 | https://nextjs.org/blog/nextjs-security-update-october-14-2026 | adotado (`e24b88e`) | 16.4.3 resolve o critical do runtime sem mudar o range `^16.0.0`. |
@@ -123,6 +126,7 @@ Observações:
 - Produto canônico: este repositório ou `Intelig-ncia-de-vendas-e-rentabilidade`?
 - Design: adotar o padrão dark-only, IBM Plex Sans e `ms-tokens.css`, ou manter a exceção de `docs/web-design.md` (tema claro, Source Serif/Sans)?
 - Retirar os arquivos de rascunho do índice agora? O repositório será público (exige purga de histórico)?
+- Com o CI só sob demanda, redefinir a meta de O1 ("5/5 jobs por 4 semanas"), por exemplo um run manual verde antes de cada publicação?
 - Indexar a vitrine (`robots` hoje `noindex`)?
 - Alias legível na Vercel (ex.: `sales-profitability-intelligence.vercel.app`) mantendo o domínio atual?
 - Manter o snapshot `14454a47e6ebbaab` (não referenciado pelo manifesto) por causa da política de recuperação do ADR-006?
@@ -134,3 +138,4 @@ Observações:
 | 2026-10-23 | Documento inicial e baseline | — | ver seção 2 | B1, B2 (O1/O3) |
 | 2026-10-26 | Run de 2026-10-24 vermelho (critical do `next`); e2e local passou a rodar | `e24b88e` fix(web) next 16.4.3 + zod, `a5b2ab4` test(web) paridade com o snapshot; docs | npm audit 1 critical + 1 high → 0; e2e não verificado → 6/6; percentuais fixos em teste 1 → 0; testes Python 71 → 71 | B2 (aprovação), B4, B6, B8. Nenhuma feature neste ciclo |
 | 2026-11-02 | 16 moderate novos (`minimatch`, só dev); job `web` sujeito ao release do Next de 2026-11-03 | `7ca0867` test (+10 testes de saída), `589e40c` chore(web) scripts + Prettier, `430a663` docs (README V2 e arquivo); docs | testes Python 71 → 81; cobertura unitária 67% → 80%; `prettier` 13 → 0 arquivos; KPIs no README 2 conjuntos → 1; audit 0 → 0 high + 16 moderate; e2e 6/6 | B13, B14, restante de B6, B9; B2 aguarda o dono. Nenhuma feature neste ciclo |
+| 2026-11-09 | CI virou sob demanda (`c13747e`), sem run nos pushes; release do Next (16.4.5) publicado; moderates 16 → 8 por mudança externa | `0925e9c` fix(web) next 16.4.5 (B13), `c4b2809` chore(web) patches (B14), `da25b34` test (lease e loader, B6); docs | testes Python 81 → 94; cobertura unitária 80% → 85%; `npm outdated` 10 → 3 (só majors); audit 0 high + 16 → 8 moderate; e2e 6/6 | B5 (produção), B7 e B9 (aguardam decisão de design), B11; B2 aguarda o dono. Nenhuma feature neste ciclo |
