@@ -21,6 +21,7 @@ jobs:
           cache-dependency-path: requirements.lock.txt
       - run: pip install -r requirements.lock.txt
       - run: ruff check . && ruff format --check .
+      - run: mypy
       - run: pytest -m 'not integration' -v
       - run: python scripts/generate_source_ddl.py --check
       - run: python scripts/generate_mock_data.py --orders 80 --customers 20 --products 20 --output artifacts/generator-smoke

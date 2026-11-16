@@ -70,6 +70,7 @@ python -m src.pipeline
 pytest -v
 ruff check .
 ruff format --check .
+mypy
 python -m src.analytics.simulator --discount 0.18
 ```
 
