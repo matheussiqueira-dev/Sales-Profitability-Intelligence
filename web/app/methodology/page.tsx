@@ -1,4 +1,17 @@
+import { loadAnalytics } from "@/lib/analytics";
+
+// Same order as the published contract; each file is verified against the manifest at build time.
+const FILES = [
+  "executive-summary",
+  "monthly-profitability",
+  "channels",
+  "products",
+  "customer-segments",
+] as const;
+
 export default function Methodology() {
+  // Throws (and fails the build) if any file drifts from its manifest hash.
+  const { manifest } = loadAnalytics();
   return (
     <main id="content" className="methodology">
       <h1>Como a rentabilidade é calculada</h1>
@@ -80,6 +93,29 @@ export default function Methodology() {
         O motor Power BI, sua conexão e testes visuais são verificados
         separadamente do build web.
       </p>
+      <h2>Verificar o snapshot</h2>
+      <p>
+        Snapshot ativo <code>{manifest.snapshot}</code>. Cada arquivo abaixo é o
+        mesmo lido pelos gráficos; o SHA-256 publicado no manifesto é conferido
+        no build. Para conferir localmente, baixe o arquivo e compare com{" "}
+        <code>sha256sum</code> (Linux/macOS) ou{" "}
+        <code>Get-FileHash -Algorithm SHA256</code> (PowerShell).
+      </p>
+      <ul className="snapshot-files" aria-label="Arquivos do snapshot ativo">
+        {FILES.map((name) => (
+          <li key={name}>
+            <a
+              href={`/data/snapshots/${manifest.snapshot}/${name}.json`}
+              download
+            >
+              {name}.json
+            </a>
+            <code className="hash" data-file={name}>
+              {manifest.sha256[name]}
+            </code>
+          </li>
+        ))}
+      </ul>
       <a
         className="button"
         href="https://github.com/matheussiqueira-dev/Sales-Profitability-Intelligence"
