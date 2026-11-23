@@ -1,6 +1,6 @@
 # Plano de Evolução — Sales-Profitability-Intelligence
 
-> Documento vivo, revisado semanalmente. Última revisão: 2026-11-16.
+> Documento vivo, revisado semanalmente. Última revisão: 2026-11-23.
 > Regra central: nenhuma mudança entra sem estar ligada a um objetivo desta página e sem manter ou melhorar as métricas da seção 2.
 
 ## 1. Identidade do projeto
@@ -8,7 +8,7 @@
 - **Propósito:** case de Dados e BI que mostra quanto da receita sobrevive a descontos, devoluções, CMV, frete e taxas (margem de contribuição) por produto, cliente e canal, com trilha completa do número: gerador sintético → contratos Pandera → PostgreSQL raw/staging/analytics → reconciliação Python × SQL × DAX → Power BI (PBIP/TMDL) e vitrine Next.js que lê só snapshots agregados conferidos por SHA-256.
 - **Tipo:** pipeline de dados + warehouse + modelo Power BI + web app estático de vitrine.
 - **Stack:**
-  - Python ≥ 3.12 (CI em 3.12 e 3.13): pandas 3.0.6, Pandera 0.34.1, SQLAlchemy 2.1.3, psycopg 3.3.6, python-dotenv 1.2.4, jsonschema 4.26.0; pytest 9.1.1, pytest-cov 7.1.0, Ruff 0.16.10, mypy 2.4.1 + pandas-stubs 3.0.5 (`requirements.lock.txt`);
+  - Python ≥ 3.12 (CI em 3.12 e 3.13): pandas 3.0.6, Pandera 0.34.1, SQLAlchemy 2.1.9, psycopg 3.3.9, python-dotenv 1.2.4, jsonschema 4.26.0; pytest 9.1.1, pytest-cov 7.1.0, Ruff 0.16.10, mypy 2.4.1 + pandas-stubs 3.0.5 (`requirements.lock.txt`);
   - PostgreSQL 17 (`postgres:17-alpine` com digest) e pgAdmin 9 opcional (Docker Compose);
   - Power BI PBIP com páginas PBIR e modelo TMDL em `powerbi/project/`;
   - `web/`: Next.js 16.4.6, React 19.3.1, Recharts 3, Tailwind CSS 4.3.5, TypeScript 5.9.3, ESLint 9.39.5 + `eslint-config-next` 16.4.6, Playwright 1.65.1, Prettier 3.9.10; Node 22 no CI.
@@ -17,9 +17,9 @@
 - **Estrutura:**
   - `src/` — `ingestion`, `validation` (Pandera, qualidade, reconciliação), `transformation` (dimensões, vendas, métricas financeiras), `database` (conexão, loader, lease de sessão), `analytics` (insights, simulador, publicação recuperável, export web), `pipeline.py`;
   - `sql/` — DDL e views analíticas; `scripts/` — gerador de dados, DDL, Power BI, export web, checagens;
-  - `tests/` — 14 arquivos (unitários e 5 de integração PostgreSQL marcados `integration`);
+  - `tests/` — 14 arquivos (unitários e 5 de integração PostgreSQL marcados `integration`); `web/tests/` com 3 specs Playwright;
   - `powerbi/` — projeto PBIP e documentação DAX/Power Query; `docs/` — arquitetura, ADRs 001–006, dicionário; relatórios e planos antigos em `docs/history/`;
-  - `web/` — `app/` (`/` e `/methodology`), `components/`, `lib/` (validação do manifesto e formatação), `public/data/snapshots/` (dois snapshots), `tests/showcase.spec.ts`;
+  - `web/` — `app/` (`/` e `/methodology`, esta com os arquivos do snapshot ativo e seus SHA-256), `components/`, `lib/` (validação do manifesto e formatação), `public/data/snapshots/` (dois snapshots), `tests/` (`showcase`, `parity`, `snapshot-files`);
   - raiz com arquivos de briefing e rascunhos (`Sales Profitability Intelligence briefing.md`/`.pdf`, `# Sales & Profitability Intelligenc.txt`, `search.txt`).
 - **Comandos:** install `pip install -r requirements.lock.txt` · `cd web && npm ci` · dev `npm run dev` · lint `ruff check . && ruff format --check .` · `npm run lint` · typecheck `npm run typecheck` · `mypy` (config em `pyproject.toml`) · test `pytest -m 'not integration'` / `RUN_DB_TESTS=1 pytest --cov=src` (PostgreSQL isolado) / `npx playwright test` · build `npm run build`; pipeline `python -m src.pipeline`.
 
@@ -27,18 +27,21 @@
 
 | Verificação | Comando | Resultado | Data |
 | --- | --- | --- | --- |
-| Instalação | `python3.12 -m venv .venv && pip install -r requirements.lock.txt` · `npm ci` (Node 22.23.4) | PASS · PASS; `pip freeze` igual ao lock | 2026-11-16 |
-| Lint | `ruff check .` · `ruff format --check .` · `npm run lint` · `npm run format:check` | PASS · PASS (86 arquivos) · PASS · PASS | 2026-11-16 |
-| Typecheck | `npm run typecheck` · `mypy` | PASS · PASS (0 erros em 24 arquivos de `src/`) | 2026-11-16 |
-| Testes | `pytest -m 'not integration' -q` | 94 passando / 0 falhando / 5 de integração não executados (sem PostgreSQL no ambiente) | 2026-11-16 |
-| Cobertura | `pytest -m 'not integration' --cov=src` | 85% só com unitários (738 statements, 109 sem cobertura); com integração: não verificado | 2026-11-16 |
-| Checagens de dados | — | não repetidas neste ciclo (sem mudança em `src/`, SQL ou Power BI) | 2026-11-16 |
-| Testes e2e | `npm run test:e2e` | PASS, 6/6 (desktop + mobile), com Google Chrome do sistema via `PLAYWRIGHT_CHANNEL=chrome` e build `next build --webpack` com fontes simuladas | 2026-11-16 |
-| Build | `npm run build` | PASS só com `next build --webpack` + `NEXT_FONT_GOOGLE_MOCKED_RESPONSES` (Google Fonts bloqueado); build real a cargo do CI | 2026-11-16 |
-| Vulnerabilidades (audit) | `pip-audit -r requirements.lock.txt` · `npm audit` | Python 0 · web 0 high/critical, 8 moderate (`minimatch` via eslint 9; só dev; `--omit=dev` = 0) | 2026-11-16 |
-| CI no GitHub | API do GitHub (Actions) | workflow só sob demanda, nenhum run manual no ciclo; update de segurança do Dependabot para `minimatch` falhou em 2026-11-09 (exige ESLint 10) | 2026-11-16 |
+| Instalação | `python3.12 -m venv .venv && pip install -r requirements.lock.txt` · `npm ci` (Node 22.23.5) | PASS · PASS; wheels do lock conferidos para Linux e Windows, Python 3.12 e 3.13 | 2026-11-23 |
+| Lint | `ruff check .` · `ruff format --check .` · `npm run lint` · `npm run format:check` | PASS · PASS (86 arquivos) · PASS · PASS | 2026-11-23 |
+| Typecheck | `npm run typecheck` · `mypy` | PASS · PASS (0 erros em 24 arquivos de `src/`) | 2026-11-23 |
+| Testes | `pytest -m 'not integration' -q` · `RUN_DB_TESTS=1 pytest` | 94 passando / 0 falhando (3.12 e 3.13) · 99 passando com os 5 de integração em PostgreSQL 16 local efêmero (o CI usa 17) | 2026-11-23 |
+| Cobertura | `pytest --cov=src` | 85% só com unitários (738 statements, 109 sem cobertura) · 94% com integração (47 sem cobertura) | 2026-11-23 |
+| Checagens de dados | `generate_source_ddl.py --check` · `generate_mock_data.py` (smoke 80 pedidos) | PASS · PASS | 2026-11-23 |
+| Testes e2e | `npm run test:e2e` | PASS, 8/8 (desktop + mobile; 6 → 8 com `snapshot-files.spec.ts`), Google Chrome do sistema via `PLAYWRIGHT_CHANNEL=chrome` e build `next build --webpack` com fontes simuladas | 2026-11-23 |
+| Build | `npm run build` | PASS só com `next build --webpack` + `NEXT_FONT_GOOGLE_MOCKED_RESPONSES` (Google Fonts bloqueado); build real a cargo do CI | 2026-11-23 |
+| Acessibilidade | axe-core 4.14.1 (WCAG 2.2 AA + best practices) em `/` e `/methodology`, 320/768/1280 px | 0 violações nas 6 combinações, antes e depois da mudança da semana | 2026-11-23 |
+| Lighthouse mobile (local) | Lighthouse 13.6.0 em `next start` local, build com fontes simuladas | `/`: Perf 73 · A11y 100 · BP 96 · SEO 60; `/methodology`: 79 · 100 · 96 · 60 (depois: 76/100/96/60 e 95/100/96/60; Perf varia muito com a CPU compartilhada do ambiente) | 2026-11-23 |
+| Vulnerabilidades (audit) | `pip-audit -r requirements.lock.txt` · `npm audit` | Python 0 · web 0 high/critical, 7 moderate (`minimatch` via `typescript-eslint`/eslint 9; só dev; `--omit=dev` = 0) | 2026-11-23 |
+| CI no GitHub | API do GitHub (Actions) | workflow só sob demanda, nenhum run de CI no ciclo; só runs do Dependabot (grafo de dependências pip verde em 2026-11-16) | 2026-11-23 |
 
 Observações:
+- 2026-11-23: primeira medição de O4 (B10). SEO 60 vem só de `is-crawlable` (`robots: noindex`, decisão pendente do dono). BP 96 pela ausência de favicon (404 em `/favicon.ico`, parte de B9). Perf de `/` limitado por TBT (1,2–1,7 s) e ~97 KiB de JS não usado (Recharts); medição local, não em produção (`*.vercel.app` bloqueado no ambiente). `/methodology` ainda tem o link "Consultar código e instruções" para o repositório privado, contra o guardrail da seção 5 — fica junto de B9.
 - 2026-11-16: `mypy` com a configuração padrão (sem `check_untyped_defs`) passa com `pandas-stubs` 3.0.5; com `check_untyped_defs` há 306 erros, quase todos de sobrecargas do `pandas-stubs` numa única linha de `sales.py`, e 3 em `validation/quality.py` (dicionário tipado como `object`). Endurecer fica como B16. As actions passaram para v7 por SHA; o job `web` segue em Node 22 porque a versão de Node do projeto na Vercel não foi verificada daqui.
 - 2026-11-09: os moderate da web caíram de 16 para 8 sem mudança no projeto (base de advisories). B7 (fonte local) ficou fora deste ciclo porque depende da decisão de design da seção 9 (Source × IBM Plex Sans).
 - 2026-10-26: critical do `next` e high do `zod` corrigidos no lockfile (`e24b88e`). Histórico: o job `web` roda `npm audit --omit=dev` sem `--audit-level`, então o critical do `next` 16.4.0 deixa o próximo run vermelho. O range `^16.0.0` permite 16.4.3 só com atualização do lockfile.
@@ -61,7 +64,7 @@ Observações:
 | O1 | Funcionamento | Os 5 jobs do CI verdes e produção com headers completos | jobs verdes; `/` e `/methodology` 200 com CSP, `nosniff`, `Referrer-Policy`, `Permissions-Policy` | job `web` previsto vermelho (critical); produção não verificada | 5/5 por 4 semanas; headers presentes | P0 | ativo (com o CI sob demanda, a meta de 4 semanas precisa ser redefinida, ver seção 9) |
 | O2 | Cobertura de testes | Cobrir os módulos de saída sem depender do banco | cobertura unitária de `src/` · menor módulo de `analytics/` | 67% · 0% (`simulator.py`) | ≥ 85% · ≥ 70% | P2 | monitorado (meta atingida em 2026-11-09: 85% · 67% em `publication.py`, que só tem caminho de integração restante; ver B6) |
 | O3 | Segurança/Higiene | Nenhum rascunho ou conversa versionado; 0 critical/high | arquivos de rascunho no índice · `npm audit` critical+high | 5 · 2 | 0 · 0 | P0 | ativo (`npm audit` 0 critical/high; faltam os 5 rascunhos, B2) |
-| O4 | Performance | Lighthouse mobile da vitrine registrado | Perf / A11y / BP / SEO em `/` | não medido | ≥ 90 / ≥ 95 / ≥ 95 / ≥ 90 | P2 | ativo |
+| O4 | Performance | Lighthouse mobile da vitrine registrado | Perf / A11y / BP / SEO em `/` | não medido | ≥ 90 / ≥ 95 / ≥ 95 / ≥ 90 | P2 | ativo (medido em 2026-11-23: A11y 100 e BP 96 atingidos; Perf 73–76 e SEO 60 abaixo da meta, ver B19 e seção 9) |
 | O5 | Qualidade/Manutenibilidade | Uma versão dos números e da documentação | conjuntos de KPIs diferentes no README · relatórios de entrega ativos | 2 (V1 e V2) · 5 relatórios sobrepostos | 1 (V2) · 1 + histórico arquivado | P1 | monitorado (meta atingida em 2026-11-02) |
 | O6 | Dados | Paridade comprovada entre UI e snapshot | `parity.spec.ts` (8 degraus da ponte + 5 KPIs) · valores fixos em teste | ausente · 1 ("22,8%") | verde, em centavos · 0 | P1 | monitorado (`parity.spec.ts` verde e nenhum percentual fixo nos testes desde 2026-10-26) |
 
@@ -90,19 +93,27 @@ Observações:
 - [ ] **B7 (P2, O1)** Fontes via `next/font/local` (Source ou IBM Plex conforme decisão de design) — `npm run build` passa sem acesso a `fonts.googleapis.com`.
 - [x] **B8 (P2, O5)** (2026-11-02, `589e40c`; `PLAYWRIGHT_CHANNEL` opcional; `public/data/` em `.prettierignore`) Scripts `test:e2e` e `format:check` no `web/package.json` (Prettier já instalado) e `channel` configurável no Playwright — CI chama os scripts; `prettier --check` com 0.
 - [ ] **B9 (P2, O1)** Alinhar o shell ao padrão: footer A.9 sem link para o repositório privado, favicon PI, `metadataBase` e OG — favicon 200; footer visível em `/` e `/methodology`.
-- [ ] **B10 (P2, O4)** Lighthouse mobile e axe da vitrine registrados — axe 0 serious/critical em 320/768/1280 px; números na seção 10.
+- [x] **B10 (P2, O4)** (2026-11-23, sem commit de código; medição local com Lighthouse 13.6.0 e axe-core 4.14.1, ver seção 2) Lighthouse mobile e axe da vitrine registrados — axe 0 serious/critical em 320/768/1280 px; números na seção 10.
 - [x] **B11 (P2, O5)** (2026-11-16, `b4d8a87`; `[tool.mypy]` em `pyproject.toml`, passo `mypy` no job `unit`, `mypy` e `pandas-stubs` no lock com wheels conferidos para Linux e Windows, 3.12 e 3.13) mypy no código Python (`src/`) com config versionada — 0 erros no job `unit`.
 - [x] **B13 (P1, O1)** (2026-11-09, `0925e9c`; 16.4.5 só no lockfile, ranges intactos) Atualizar `next` e `eslint-config-next` para o patch do release de segurança de 2026-11-03 (7 achados médios) — `npm audit --omit=dev` com 0; suíte web verde.
 - [x] **B14 (P2, O5)** (2026-11-09, `c4b2809`; também Tailwind 4.3.5 e `react-dom` 19.3.1) Atualizar patches do lockfile (`@playwright/test` 1.64.1, `prettier` 3.9.10, `react` 19.3.1) — `npm outdated` só com majors.
 - [x] **B15 (P2, O1)** (2026-11-16, `f261162`; só lockfile) Atualizar `next`/`eslint-config-next` 16.4.6 e `@playwright/test` 1.65.1 — suíte web e e2e verdes.
 - [ ] **B16 (P3, O5)** Ativar `check_untyped_defs` no mypy — corrigir o tipo do dicionário em `validation/quality.py` e a operação de datas em `transformation/sales.py` sem `# type: ignore`; 0 erros.
 - [ ] **B17 (P3, O1)** Node 24 no job `web`, alinhado à configuração da Vercel — versão de Node da Vercel conferida e igual à do CI.
+- [x] **B18 (P2, O1)** (2026-11-23, `677fed8`; só `requirements.lock.txt`; também `typeguard`, `iniconfig`, `typing-inspection`) Atualizar patches do lock Python (`psycopg` 3.3.9, SQLAlchemy 2.1.9, numpy 2.5.5, `tzdata` 2026.6) — unitários e integração verdes, wheels para Linux/Windows 3.12/3.13.
+- [ ] **B19 (P2, O4)** Reduzir o JS de `/` (TBT 1,2–1,7 s e ~97 KiB não usados, Recharts) — Perf mobile ≥ 90 medido em produção ou no CI; sem perda de funcionalidade nos gráficos.
+- [ ] **B20 (P3, O1)** Registrar no CI o Lighthouse/axe da vitrine (passo opcional do job `web`) — números reproduzíveis fora do ambiente local; depende da política FinOps do CI sob demanda.
 - [x] **B12 (P3, O5)** (2026-11-16, `c261bc5`; checkout v7.0.1, setup-python v7.1.0, setup-node v7.1.0; Node 24 no job `web` ficou de fora, ver seção 2) Atualizar actions para as majors atuais, fixar por SHA e Node 24 no job `web` — workflow sem `@v4`/`@v5` soltos; CI verde.
 
 ## 7. Radar técnico
 
 | Data | Item | Fonte | Veredito (adotar / avaliar / descartar) | Motivo |
 | --- | --- | --- | --- | --- |
+| 2026-11-23 | `psycopg` 3.3.9 e SQLAlchemy 2.1.9 (patches) | https://www.psycopg.org/articles/tag/release · https://docs.sqlalchemy.org/en/21/changelog/changelog_21.html | adotado (`677fed8`) | Correções dentro das faixas; integração verde em PostgreSQL local (B18). |
+| 2026-11-23 | pandas 3.1.0 (22/10/2026), `pandas-stubs` 3.1 e Pandera 0.36 | https://pandas.pydata.org/docs/whatsnew/v3.1.0.html · https://pypi.org/project/pandera | avaliar | Minor do pandas exige subir `pandas-stubs` (`<3.1` no `requirements.txt`) e Pandera juntos; passar pela reconciliação Python × SQL × DAX antes. |
+| 2026-11-23 | Release de segurança do Next.js de novembro/2026 (linha 16.4 corrigida em 16.4.5) | https://nextjs.org/blog/november-2026-security-release | mantido | O lock já está em 16.4.6; `npm audit --omit=dev` 0. |
+| 2026-11-23 | Lighthouse 13.6.0 e axe-core 4.14.1 (ferramentas fora do projeto) | https://github.com/GoogleChrome/lighthouse/releases | adotado para medição (B10) | Instalados só no ambiente de verificação; nenhum pacote novo no `package.json`. |
+| 2026-11-23 | GHSA-g3hv-75wg-m249 (`minimatch`, via `typescript-eslint`) | https://github.com/advisories/GHSA-g3hv-75wg-m249 | avaliar (major) | 8 → 7 moderate; só dev; correção depende de ESLint 10 (seção 9). |
 | 2026-11-16 | mypy 2.4.1 + pandas-stubs 3.0.5 | https://mypy.readthedocs.io/en/stable/config_file.html | adotado (`b4d8a87`) | Typecheck do Python (B11) sem mudar código; stubs da mesma linha do pandas 3.0. |
 | 2026-11-16 | `actions/checkout` v7.0.1, `setup-python` v7.1.0, `setup-node` v7.1.0 por SHA | https://github.com/actions/setup-python/releases | adotado (`c261bc5`) | Referência imutável; mesmos SHAs dos demais repositórios. |
 | 2026-11-16 | Next.js 16.4.6 / Playwright 1.65.1 | https://playwright.dev/docs/release-notes | adotado (`f261162`) | Patches dentro dos ranges. |
@@ -127,6 +138,7 @@ Observações:
 | F2 | Filtros coordenados (canal × categoria × período) na ponte financeira | Exploração do "onde a margem se perde"; demonstra estado de filtro na URL | baixo | proposta |
 | F3 | Página de linhagem do número (CSV → raw → staging → analytics → snapshot) com hashes | Trilha auditável visível para quem avalia Dados/BI | baixo | proposta |
 | F4 | Download do snapshot agregado em CSV com hash | Reuso e verificação externa | baixo | proposta |
+| F6 | Arquivos do snapshot ativo com SHA-256 na página de metodologia (download dos 5 JSONs) | Verificação externa do número sem acesso ao código; variante em JSON de F4 | baixo | implementada (2026-11-23, `69cdacd`; e2e confere o hash baixado) |
 | F5 | Painel de insights (as 10 regras) com evidência e limiar | Expõe a camada de regras hoje só em CLI | médio (cobertura de `insights.py` em 8%) | proposta |
 
 ## 9. Decisões pendentes do dono
@@ -137,6 +149,9 @@ Observações:
 - Com o CI só sob demanda, redefinir a meta de O1 ("5/5 jobs por 4 semanas"), por exemplo um run manual verde antes de cada publicação?
 - Indexar a vitrine (`robots` hoje `noindex`)?
 - Alias legível na Vercel (ex.: `sales-profitability-intelligence.vercel.app`) mantendo o domínio atual?
+- Migrar para ESLint 10 (major) para fechar os 7 moderate de dev (`minimatch`)?
+- Atualizar pandas para 3.1 com `pandas-stubs` 3.1 e Pandera 0.36 (minor com mudança de faixa em `requirements.txt`)?
+- Remover agora o link "Consultar código e instruções" de `/methodology` (aponta para o repositório privado) ou esperar a decisão de B9?
 - Manter o snapshot `14454a47e6ebbaab` (não referenciado pelo manifesto) por causa da política de recuperação do ADR-006?
 
 ## 10. Registro semanal
@@ -148,3 +163,4 @@ Observações:
 | 2026-11-02 | 16 moderate novos (`minimatch`, só dev); job `web` sujeito ao release do Next de 2026-11-03 | `7ca0867` test (+10 testes de saída), `589e40c` chore(web) scripts + Prettier, `430a663` docs (README V2 e arquivo); docs | testes Python 71 → 81; cobertura unitária 67% → 80%; `prettier` 13 → 0 arquivos; KPIs no README 2 conjuntos → 1; audit 0 → 0 high + 16 moderate; e2e 6/6 | B13, B14, restante de B6, B9; B2 aguarda o dono. Nenhuma feature neste ciclo |
 | 2026-11-09 | CI virou sob demanda (`c13747e`), sem run nos pushes; release do Next (16.4.5) publicado; moderates 16 → 8 por mudança externa | `0925e9c` fix(web) next 16.4.5 (B13), `c4b2809` chore(web) patches (B14), `da25b34` test (lease e loader, B6); docs | testes Python 81 → 94; cobertura unitária 80% → 85%; `npm outdated` 10 → 3 (só majors); audit 0 high + 16 → 8 moderate; e2e 6/6 | B5 (produção), B7 e B9 (aguardam decisão de design), B11; B2 aguarda o dono. Nenhuma feature neste ciclo |
 | 2026-11-16 | Suíte verde; CI sob demanda, sem run; update de segurança do Dependabot para `minimatch` falhou (exige ESLint 10) | `b4d8a87` build (mypy, B11), `f261162` chore(web) (B15), `c261bc5` ci (actions por SHA, B12); docs | testes 94 mantidos; cobertura 85% mantida; mypy ausente → 0 erros; e2e 6/6; audit 0 high + 8 moderate mantido; `npm outdated` só com majors e `prettier` 3.10 | B16, B17, B5 (produção); B7/B9 aguardam design; B2 aguarda o dono. Nenhuma feature neste ciclo (F2–F4 seguem propostas) |
+| 2026-11-23 | Suíte verde; integração rodada pela primeira vez fora do CI (PostgreSQL 16 local); CI sob demanda, sem run; moderates 8 → 7 sem mudança no projeto | `677fed8` chore(deps) patches Python (B18), `69cdacd` feat(web) arquivos do snapshot com SHA-256 (F6); B10 medido; docs | testes Python 94 mantidos (99 com integração); cobertura 85% mantida (94% com integração); e2e 6 → 8; axe 0 violações; Lighthouse mobile medido pela primeira vez (Perf 73–79, A11y 100, BP 96, SEO 60); audit 0 high + 7 moderate | B19 (Perf), B16, B17, B5 (produção); B7/B9 aguardam design; B2 aguarda o dono |
